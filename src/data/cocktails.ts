@@ -158,6 +158,55 @@ export const COCKTAIL_FAMILIES: CocktailFamily[] = [
         ],
         note: '红心芭乐天然粉色，无需额外色素。气泡水最后倒保留气泡感。可加少量柠檬汁提升层次。即调即喝。',
       },
+      {
+        id: 'tropical-mirage',
+        name: '热带迷踪',
+        nameEn: 'Tropical Mirage',
+        sub: '白朗姆 · 百香果 · 椰子水 · 热带风格',
+        image: '',  // '/images/cocktail/tropical-mirage.jpg'
+        tagColor: 'amber',
+        tags: ['Highball', '长饮', '百香果'],
+        variants: [
+          {
+            label: '酒精版',
+            ingredients: [
+              { name: '白朗姆酒', amount: '45ml' },
+              { name: '新鲜百香果', amount: '2 个（果肉挖出）' },
+              { name: '椰子水', amount: '150ml' },
+              { name: '青柠汁', amount: '15ml' },
+              { name: '蜂蜜', amount: '10ml' },
+              { name: '冰块', amount: '适量' },
+            ],
+            steps: [
+              '蜂蜜＋青柠汁在杯底先搅匀',
+              '加满冰块',
+              '倒入白朗姆酒',
+              '倒入椰子水，轻搅',
+              '将百香果肉直接浇在顶部，不要搅散，保留颗粒感和视觉层次',
+            ],
+            note: '百香果肉浇顶是灵魂，喝之前再搅散。椰子水可换成气泡水，口感更清爽。即调即喝。',
+          },
+          {
+            label: '无酒精',
+            ingredients: [
+              { name: '新鲜百香果', amount: '2 个（果肉挖出）' },
+              { name: '椰子水', amount: '180ml' },
+              { name: '青柠汁', amount: '20ml' },
+              { name: '蜂蜜', amount: '15ml' },
+              { name: '气泡水', amount: '50ml' },
+              { name: '冰块', amount: '适量' },
+            ],
+            steps: [
+              '蜂蜜＋青柠汁在杯底先搅匀',
+              '加满冰块',
+              '倒入椰子水',
+              '沿杯壁缓缓倒入气泡水',
+              '百香果肉浇顶，不要搅散',
+            ],
+            note: '蜂蜜可换成糖浆更易溶解。气泡水让口感更轻盈，适合夏天。即调即喝。',
+          },
+        ],
+      },
       // ── 在这里继续添加 Highball 类新配方 ──
     ],
   },
