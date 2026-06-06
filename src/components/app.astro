@@ -10,7 +10,16 @@ import info from "../data/info";
 import StickyNav from "./sticky_nav.astro";
 import type { DiaryCardItem } from "../api/home";
 
-const diaryCards: DiaryCardItem[] = info.diaryCards;
+// 置顶入口卡片：固定排在日常碎片最前，客户端实时拉取后也会重新置顶（见下方脚本）
+const cocktailCard: DiaryCardItem = {
+  title: "🍹 调酒配方本",
+  url: "/cocktail",
+  bgStyle:
+    "bg-[url('/images/cocktail/jrwx.png')] bg-cover bg-center shadow-accent hover:shadow-violet-300",
+  textStyle: "text-white",
+};
+
+const diaryCards: DiaryCardItem[] = [cocktailCard, ...info.diaryCards];
 
 // const showCV = false;
 ---
@@ -254,6 +263,9 @@ const diaryCards: DiaryCardItem[] = info.diaryCards;
   }
 </style>
 
+<!-- 置顶入口卡片数据，供客户端实时拉取后重新置顶 -->
+<script type="application/json" id="pinned-diary-card" set:html={JSON.stringify(cocktailCard)}></script>
+
 <script>
   import { initDragScroll, initFollowerUpdate } from "../scripts/home-interactions";
   import { homeApi } from "../api/home";
@@ -312,9 +324,17 @@ const diaryCards: DiaryCardItem[] = info.diaryCards;
   document.addEventListener("DOMContentLoaded", async () => {
     initDragScroll();
     initFollowerUpdate();
+    // 读取置顶入口卡片，实时数据回来后仍固定排在最前
+    let pinned: DiaryCardItem | null = null;
+    try {
+      const pinnedEl = document.getElementById("pinned-diary-card");
+      if (pinnedEl) pinned = JSON.parse(pinnedEl.textContent || "null");
+    } catch { /* 忽略置顶卡片解析失败 */ }
     try {
       const data = await homeApi.getLatestSnippets();
-      if (data && data.diaryCards) renderDiaryCards(data.diaryCards);
+      if (data && data.diaryCards) {
+        renderDiaryCards(pinned ? [pinned, ...data.diaryCards] : data.diaryCards);
+      }
     } catch (error) {
       // 拉取失败：保留 SSG 渲染的 info.diaryCards 兜底，不覆盖
       console.error("Failed to fetch latest snippets:", error);

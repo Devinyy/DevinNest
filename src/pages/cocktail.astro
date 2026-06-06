@@ -1,0 +1,393 @@
+---
+// src/pages/cocktail.astro
+import StickyNav from "../components/sticky_nav.astro";
+import { COCKTAIL_FAMILIES } from "../data/cocktails";
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="black">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🍹 调酒配方本 · Devin's Nest</title>
+    <meta name="description" content="个人调酒配方收藏，记录每一杯的配料与步骤" />
+    <link
+      rel="preload"
+      href="/fonts/MaoKenZhuYuanTi.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="shortcut icon" href="/favicons/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/favicons/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/favicons/favicon-16x16.png"
+    />
+    <link rel="manifest" href="/favicons/site.webmanifest" />
+    <style>
+      @font-face {
+        font-family: "MaokenZhuyuanTi";
+        src: url(/fonts/MaoKenZhuYuanTi.ttf);
+        font-display: swap;
+      }
+      body {
+        cursor: url(/icons/cursor.ico), auto;
+        font-family: "MaokenZhuyuanTi";
+      }
+    </style>
+  </head>
+  <body class="bg-base-100 min-h-screen">
+    <StickyNav showImmediately={true} />
+
+    <main class="pt-24 pb-20">
+      <style>
+        .cocktail-page {
+          --cp-bg2:#161616;--cp-bg3:#1e1e1e;--cp-border:#2e2e2e;
+          --cp-text:#e8e8e8;--cp-muted:#666;--cp-muted2:#888;
+          --cp-accent:#c4b5fd;--cp-green:#4ade80;--cp-pink:#f472b6;--cp-r:14px;
+        }
+        .cp-header{padding:40px 0 28px;border-bottom:1px solid var(--cp-border);display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+        .cp-header h1{font-size:clamp(22px,4vw,30px);font-weight:400;letter-spacing:-.02em;color:var(--cp-text)}
+        .cp-header h1 em{color:var(--cp-accent);font-style:normal}
+        .cp-breadcrumb{font-size:12px;color:var(--cp-muted);display:flex;align-items:center;gap:6px}
+        .cp-breadcrumb a{color:var(--cp-muted);text-decoration:none}
+        .cp-breadcrumb a:hover{color:var(--cp-text)}
+        .cp-filter{padding:18px 0;display:flex;gap:8px;flex-wrap:wrap}
+        .cp-pill{padding:5px 14px;border-radius:100px;border:1px solid var(--cp-border);background:transparent;color:var(--cp-muted2);font-size:12px;cursor:pointer;transition:all .2s;text-decoration:none;letter-spacing:.03em}
+        .cp-pill:hover,.cp-pill.active{background:var(--cp-accent);border-color:var(--cp-accent);color:#0f0f0f;font-weight:500}
+        .cp-section{display:flex;align-items:center;gap:14px;margin:40px 0 20px}
+        .cp-section:first-of-type{margin-top:8px}
+        .cp-section h2{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--cp-muted2);white-space:nowrap}
+        .cp-stag{font-size:11px;padding:2px 10px;border-radius:100px;border:1px solid #2e2e2e;color:var(--cp-accent);background:rgba(196,181,253,.08);white-space:nowrap}
+        .cp-section hr{flex:1;border:none;border-top:1px solid var(--cp-border)}
+        /* card */
+        .cp-card{background:var(--cp-bg2);border:1px solid var(--cp-border);border-radius:var(--cp-r);overflow:hidden;margin-bottom:16px;transition:border-color .2s}
+        .cp-card:hover{border-color:#3e3e3e}
+        .cp-card-layout{display:grid;grid-template-columns:260px 1fr}
+        .cp-photo{background:var(--cp-bg3);position:relative;min-height:260px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--cp-border);overflow:hidden}
+        .cp-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+        .cp-photo-ph{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--cp-muted);z-index:1}
+        .cp-photo-ph svg{width:36px;height:36px;opacity:.3}
+        .cp-photo-ph span{font-size:11px;letter-spacing:.05em;opacity:.5}
+        .cp-body{padding:24px 28px;display:flex;flex-direction:column;gap:16px}
+        .cp-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+        .cp-name{font-size:24px;font-weight:500;letter-spacing:-.02em;line-height:1.2;color:var(--cp-text)}
+        .cp-sub{font-size:12px;color:var(--cp-muted);margin-top:4px;font-style:italic}
+        .cp-tags{display:flex;flex-wrap:wrap;gap:5px;flex-shrink:0}
+        .cp-tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;border:1px solid var(--cp-border);color:var(--cp-muted2)}
+        .cp-tag-green{color:var(--cp-green);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.05)}
+        .cp-tag-pink{color:var(--cp-pink);border-color:rgba(244,114,182,.25);background:rgba(244,114,182,.05)}
+        .cp-tag-amber{color:var(--cp-accent);border-color:rgba(196,181,253,.25);background:rgba(196,181,253,.05)}
+        /* tabs */
+        .cp-vtabs{display:flex;border-bottom:1px solid var(--cp-border);margin:0 -28px;padding:0 28px}
+        .cp-vtab{font-size:12px;padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;color:var(--cp-muted);transition:all .15s;white-space:nowrap;user-select:none;margin-bottom:-1px}
+        .cp-vtab.active{color:var(--cp-accent);border-bottom-color:var(--cp-accent);font-weight:500}
+        .cp-vtab:hover:not(.active){color:var(--cp-text)}
+        .cp-vpanel{display:none}.cp-vpanel.active{display:flex;flex-direction:column;gap:16px}
+        /* ingredients */
+        .cp-ing{border-top:1px solid var(--cp-border);padding-top:14px}
+        .cp-ing h4{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--cp-muted);margin-bottom:10px;font-weight:500}
+        .cp-ing-grid{display:grid;grid-template-columns:1fr auto}
+        .cp-ing-row{display:contents}
+        .cp-ing-row span:first-child{font-size:13px;padding:5px 0;border-bottom:1px solid #222;color:var(--cp-text)}
+        .cp-ing-row:last-child span{border-bottom:none}
+        .cp-ing-row span:last-child{font-size:13px;padding:5px 0 5px 20px;border-bottom:1px solid #222;color:var(--cp-accent);font-weight:500;text-align:right}
+        /* collapse */
+        .cp-collapse{border-top:1px solid var(--cp-border);padding-top:2px}
+        .cp-collapse-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 0;background:none;border:none;cursor:pointer;color:var(--cp-muted2);font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;transition:color .15s}
+        .cp-collapse-btn:hover{color:var(--cp-text)}
+        .cp-collapse-btn.open{color:var(--cp-accent)}
+        .cp-collapse-icon{width:16px;height:16px;border-radius:50%;border:1px solid var(--cp-border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--cp-muted);transition:transform .25s,border-color .15s;flex-shrink:0}
+        .cp-collapse-btn.open .cp-collapse-icon{transform:rotate(180deg);border-color:var(--cp-accent);color:var(--cp-accent)}
+        .cp-collapse-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+        .cp-collapse-body.open{grid-template-rows:1fr}
+        .cp-collapse-inner{overflow:hidden}
+        .cp-collapse-inner ol{list-style:none;display:flex;flex-direction:column;gap:7px;padding:4px 0 14px}
+        .cp-collapse-inner li{display:flex;gap:10px;font-size:13px;line-height:1.6;color:var(--cp-text)}
+        .cp-snum{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(196,181,253,.1);border:1px solid rgba(196,181,253,.25);color:var(--cp-accent);font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;margin-top:2px}
+        /* note */
+        .cp-note{border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.6}
+        .cp-note strong{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;font-weight:500}
+        .cp-note.green{background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);color:#3a9060}
+        .cp-note.green strong{color:var(--cp-green)}
+        .cp-note.pink{background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.15);color:#a04060}
+        .cp-note.pink strong{color:var(--cp-pink)}
+        .cp-note.amber{background:rgba(196,181,253,.06);border:1px solid rgba(196,181,253,.15);color:#8b7fc7}
+        .cp-note.amber strong{color:var(--cp-accent)}
+        /* tea grid */
+        .cp-tea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+        .cp-tea-card{background:var(--cp-bg2);border:1px solid var(--cp-border);border-radius:var(--cp-r);padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s}
+        .cp-tea-card:hover{border-color:#3e3e3e}
+        .cp-tea-photo{width:100%;aspect-ratio:4/3;border-radius:8px;background:var(--cp-bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;font-size:28px}
+        .cp-tea-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+        .cp-tea-name{font-size:15px;font-weight:500;color:var(--cp-text)}
+        .cp-tea-desc{font-size:12px;color:var(--cp-muted2);line-height:1.5}
+        .cp-tea-ing{display:grid;grid-template-columns:1fr auto;margin-top:4px}
+        .cp-tea-ing-row{display:contents}
+        .cp-tea-ing-row span:first-child{font-size:12px;padding:4px 0;border-bottom:1px solid #1e1e1e;color:var(--cp-text)}
+        .cp-tea-ing-row:last-child span{border-bottom:none}
+        .cp-tea-ing-row span:last-child{font-size:12px;padding:4px 0 4px 12px;border-bottom:1px solid #1e1e1e;color:var(--cp-accent);font-weight:500;text-align:right}
+        .cp-tea-shelf{font-size:11px;color:var(--cp-muted);padding-top:6px;border-top:1px solid var(--cp-border)}
+        /* intro */
+        .cp-intro{font-size:13px;color:var(--cp-muted2);margin-bottom:20px;line-height:1.7}
+        /* footer */
+        .cp-footer{padding:20px 0;border-top:1px solid var(--cp-border);font-size:12px;color:var(--cp-muted);display:flex;justify-content:space-between}
+        /* responsive */
+        @media(max-width:680px){
+          .cp-card-layout{grid-template-columns:1fr}
+          .cp-photo{min-height:180px;border-right:none;border-bottom:1px solid var(--cp-border)}
+          .cp-body{padding:16px}
+          .cp-vtabs{margin:0 -16px;padding:0 16px}
+        }
+      </style>
+
+      <div class="cocktail-page max-w-4xl mx-auto px-4">
+
+        <div class="cp-header">
+          <h1>🍹 <em>调酒</em>配方本</h1>
+          <div class="cp-breadcrumb">
+            <a href="/">首页</a><span>/</span>
+            <a href="/fragmentlist">日常</a><span>/</span>
+            <span>调酒配方本</span>
+          </div>
+        </div>
+
+        <div class="cp-filter">
+          <a class="cp-pill active" href="#all">全部</a>
+          {COCKTAIL_FAMILIES.map(f => (
+            <a class="cp-pill" href={`#${f.id}`}>{f.name}</a>
+          ))}
+        </div>
+
+        {COCKTAIL_FAMILIES.map(family => (
+          <>
+            {/* ── Section heading ── */}
+            <div class="cp-section" id={family.id}>
+              <h2>{family.name}</h2>
+              <span class="cp-stag">{family.tag}</span>
+              <hr />
+            </div>
+
+            {family.intro && <p class="cp-intro">{family.intro}</p>}
+
+            {/* ── Card layout ── */}
+            {family.layout === 'card' && family.recipes.map(recipe => (
+              <div class="cp-card">
+                <div class="cp-card-layout">
+
+                  {/* 图片区 */}
+                  <div class="cp-photo">
+                    {recipe.image
+                      ? <img src={recipe.image} alt={recipe.name} />
+                      : (
+                        <div class="cp-photo-ph">
+                          <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.2">
+                            <rect x="4" y="10" width="28" height="22" rx="3"/>
+                            <path d="M4 17l6-5 6 6 6-8 10 7"/>
+                            <circle cx="12" cy="15" r="2.5"/>
+                          </svg>
+                          <span>添加图片</span>
+                        </div>
+                      )
+                    }
+                  </div>
+
+                  {/* 内容区 */}
+                  <div class="cp-body">
+                    <div class="cp-title-row">
+                      <div>
+                        <div class="cp-name">
+                          {recipe.name}{recipe.nameEn && ` · ${recipe.nameEn}`}
+                        </div>
+                        <div class="cp-sub">{recipe.sub}</div>
+                      </div>
+                      <div class="cp-tags">
+                        {recipe.tags.map(tag => (
+                          <span class={`cp-tag cp-tag-${recipe.tagColor}`}>{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 多版本：Tab 切换 */}
+                    {recipe.variants ? (
+                      <>
+                        <div class="cp-vtabs">
+                          {recipe.variants.map((v, i) => (
+                            <div
+                              class={`cp-vtab${i === 0 ? ' active' : ''}`}
+                              onclick={`cpSwitchTab(this,'${recipe.id}-${i}')`}
+                            >
+                              {v.label}
+                            </div>
+                          ))}
+                        </div>
+                        {recipe.variants.map((v, i) => (
+                          <div class={`cp-vpanel${i === 0 ? ' active' : ''}`} id={`${recipe.id}-${i}`}>
+                            <div class="cp-ing">
+                              <h4>配料{v.label !== '我的版本' ? `（${v.label}）` : ''}</h4>
+                              <div class="cp-ing-grid">
+                                {v.ingredients.map(ing => (
+                                  <div class="cp-ing-row">
+                                    <span>{ing.name}</span>
+                                    <span>{ing.amount}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div class="cp-collapse">
+                              <button class="cp-collapse-btn" onclick="cpToggle(this)">
+                                <span>步骤</span><span class="cp-collapse-icon">▾</span>
+                              </button>
+                              <div class="cp-collapse-body">
+                                <div class="cp-collapse-inner">
+                                  <ol>
+                                    {v.steps.map((step, idx) => (
+                                      <li>
+                                        <span class="cp-snum">{idx + 1}</span>
+                                        <span>{step}</span>
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              </div>
+                            </div>
+                            {v.note && (
+                              <div class={`cp-note ${recipe.tagColor}`}>
+                                <strong>备注</strong>{v.note}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      /* 单版本：直接展示 */
+                      <>
+                        <div class="cp-ing">
+                          <h4>配料</h4>
+                          <div class="cp-ing-grid">
+                            {recipe.ingredients!.map(ing => (
+                              <div class="cp-ing-row">
+                                <span>{ing.name}</span>
+                                <span>{ing.amount}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div class="cp-collapse">
+                          <button class="cp-collapse-btn" onclick="cpToggle(this)">
+                            <span>步骤</span><span class="cp-collapse-icon">▾</span>
+                          </button>
+                          <div class="cp-collapse-body">
+                            <div class="cp-collapse-inner">
+                              <ol>
+                                {recipe.steps!.map((step, idx) => (
+                                  <li>
+                                    <span class="cp-snum">{idx + 1}</span>
+                                    <span>{step}</span>
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          </div>
+                        </div>
+                        {recipe.note && (
+                          <div class={`cp-note ${recipe.tagColor}`}>
+                            <strong>备注</strong>{recipe.note}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* ── Grid layout ── */}
+            {family.layout === 'grid' && (
+              <div class="cp-tea-grid">
+                {family.recipes.map(recipe => (
+                  <div class="cp-tea-card">
+                    <div class="cp-tea-photo">
+                      {recipe.image
+                        ? <img src={recipe.image} alt={recipe.name} />
+                        : <span>{['🍵','🌿','🌸','🍑','🍓','🍊','🔥','☕','🍹'][
+                            family.recipes.indexOf(recipe) % 9
+                          ]}</span>
+                      }
+                    </div>
+                    <div class="cp-tea-name">{recipe.name}</div>
+                    <div class="cp-tea-desc">{recipe.sub}</div>
+                    <div class="cp-tea-ing">
+                      {recipe.ingredients!.map(ing => (
+                        <div class="cp-tea-ing-row">
+                          <span>{ing.name}</span>
+                          <span>{ing.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div class="cp-collapse" style="border-top:1px solid var(--cp-border)">
+                      <button class="cp-collapse-btn" onclick="cpToggle(this)">
+                        <span>步骤</span><span class="cp-collapse-icon">▾</span>
+                      </button>
+                      <div class="cp-collapse-body">
+                        <div class="cp-collapse-inner">
+                          <ol>
+                            {recipe.steps!.map((step, idx) => (
+                              <li>
+                                <span class="cp-snum">{idx + 1}</span>
+                                <span>{step}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                    {recipe.note && (
+                      <div class="cp-tea-shelf">{recipe.note}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ))}
+
+        <div class="cp-footer">
+          <span>🍹 调酒配方本</span>
+          <span>持续更新 · 2026</span>
+        </div>
+
+      </div>
+    </main>
+
+    <script defer src="/libs/mouse-click.js"></script>
+    <script>
+      function cpSwitchTab(el: HTMLElement, panelId: string) {
+        const card = el.closest('.cp-card')!;
+        card.querySelectorAll('.cp-vtab').forEach(t => t.classList.remove('active'));
+        card.querySelectorAll('.cp-vpanel').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        card.querySelector(`#${panelId}`)?.classList.add('active');
+      }
+      function cpToggle(btn: HTMLElement) {
+        btn.classList.toggle('open');
+        (btn.nextElementSibling as HTMLElement).classList.toggle('open');
+      }
+      (window as any).cpSwitchTab = cpSwitchTab;
+      (window as any).cpToggle = cpToggle;
+    </script>
+  </body>
+</html>
