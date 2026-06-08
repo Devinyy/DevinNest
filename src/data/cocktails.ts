@@ -64,7 +64,7 @@ export const COCKTAIL_FAMILIES: CocktailFamily[] = [
         name: '莫吉托',
         nameEn: 'Mojito',
         sub: '古巴 · 1940s · 白朗姆基酒',
-        image: '',  // 填入路径后自动显示，如 '/images/cocktail/mojito.jpg'
+        image: '/images/cocktail/mojito.png',
         tagColor: 'green',
         tags: ['Julep', '长饮'],
         variants: [
@@ -141,7 +141,7 @@ export const COCKTAIL_FAMILIES: CocktailFamily[] = [
         id: 'bafenyuyu',
         name: '芭粉物语',
         sub: '伏特加 · 芭乐 · 粉色系',
-        image: '',  // '/images/cocktail/bafenyuyu.jpg'
+        image: '/images/cocktail/bfwy.png',
         tagColor: 'pink',
         tags: ['Highball', '长饮', '粉色'],
         ingredients: [
@@ -206,6 +206,30 @@ export const COCKTAIL_FAMILIES: CocktailFamily[] = [
             note: '蜂蜜可换成糖浆更易溶解。气泡水让口感更轻盈，适合夏天。即调即喝。',
           },
         ],
+      },
+      {
+        id: 'rainbow',
+        name: '彩虹',
+        nameEn: 'Rainbow',
+        sub: '蓝橙力娇酒 · 橙汁 · 葡萄汽水 · Float 分层',
+        image: '/images/cocktail/rainbow.png',
+        tagColor: 'amber',
+        tags: ['Highball', 'Float', '分层', '无基酒'],
+        ingredients: [
+          { name: '蓝橙力娇酒（Blue Curaçao）', amount: '30ml' },
+          { name: '橙汁', amount: '80ml' },
+          { name: '元气森林葡萄汽水', amount: '100ml' },
+          { name: '大冰块', amount: '1～2 块' },
+          { name: '柠檬角', amount: '1 片（装饰）' },
+        ],
+        steps: [
+          '杯中放入大冰块',
+          '沿杯壁倒入蓝橙力娇酒，沉入杯底',
+          '将橙汁沿吧匙缓缓注入，形成中间层（不要直接倒，会破坏分层）',
+          '最后将元气森林葡萄汽水沿吧匙缓缓漂浮在顶部',
+          '柠檬角装饰杯口，不要搅拌，保留分层效果',
+        ],
+        note: '分层靠密度差：含糖的蓝橙力娇酒最重沉底，元气森林葡萄汽水是 0 糖气泡水、最轻浮顶，橙汁居中。务必沿吧匙缓慢漂浮，倒太快会冲混分层。即调即喝，搅匀后是一杯好喝的橙香气泡饮。',
       },
       // ── 在这里继续添加 Highball 类新配方 ──
     ],

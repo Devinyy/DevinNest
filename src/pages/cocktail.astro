@@ -78,7 +78,8 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
         .cp-card:hover{border-color:#3e3e3e}
         .cp-card-layout{display:grid;grid-template-columns:260px 1fr}
         .cp-photo{background:var(--cp-bg3);position:relative;min-height:260px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--cp-border);overflow:hidden}
-        .cp-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+        .cp-photo img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;cursor:zoom-in;padding:10px;transition:transform .2s}
+        .cp-photo img:hover{transform:scale(1.03)}
         .cp-photo-ph{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--cp-muted);z-index:1}
         .cp-photo-ph svg{width:36px;height:36px;opacity:.3}
         .cp-photo-ph span{font-size:11px;letter-spacing:.05em;opacity:.5}
@@ -132,7 +133,15 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
         .cp-tea-card{background:var(--cp-bg2);border:1px solid var(--cp-border);border-radius:var(--cp-r);padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s}
         .cp-tea-card:hover{border-color:#3e3e3e}
         .cp-tea-photo{width:100%;aspect-ratio:4/3;border-radius:8px;background:var(--cp-bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;font-size:28px}
-        .cp-tea-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+        .cp-tea-photo img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;cursor:zoom-in;transition:transform .2s}
+        .cp-tea-photo img:hover{transform:scale(1.03)}
+        /* lightbox 灯箱预览 */
+        .cp-lightbox{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;padding:32px;cursor:zoom-out;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)}
+        .cp-lightbox.open{display:flex;opacity:1}
+        .cp-lightbox img{max-width:92vw;max-height:88vh;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.96);transition:transform .2s}
+        .cp-lightbox.open img{transform:scale(1)}
+        .cp-lightbox-close{position:absolute;top:20px;right:24px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+        .cp-lightbox-close:hover{background:rgba(255,255,255,.15)}
         .cp-tea-name{font-size:15px;font-weight:500;color:var(--cp-text)}
         .cp-tea-desc{font-size:12px;color:var(--cp-muted2);line-height:1.5}
         .cp-tea-ing{display:grid;grid-template-columns:1fr auto;margin-top:4px}
@@ -191,7 +200,7 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
                   {/* 图片区 */}
                   <div class="cp-photo">
                     {recipe.image
-                      ? <img src={recipe.image} alt={recipe.name} />
+                      ? <img src={recipe.image} alt={recipe.name} onclick="cpZoom(this)" />
                       : (
                         <div class="cp-photo-ph">
                           <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -322,7 +331,7 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
                   <div class="cp-tea-card">
                     <div class="cp-tea-photo">
                       {recipe.image
-                        ? <img src={recipe.image} alt={recipe.name} />
+                        ? <img src={recipe.image} alt={recipe.name} onclick="cpZoom(this)" />
                         : <span>{['🍵','🌿','🌸','🍑','🍓','🍊','🔥','☕','🍹'][
                             family.recipes.indexOf(recipe) % 9
                           ]}</span>
@@ -373,6 +382,12 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
       </div>
     </main>
 
+    {/* 图片放大预览灯箱 */}
+    <div class="cp-lightbox" id="cpLightbox" onclick="cpCloseZoom()">
+      <button class="cp-lightbox-close" aria-label="关闭">✕</button>
+      <img src="" alt="" />
+    </div>
+
     <script defer src="/libs/mouse-click.js"></script>
     <script>
       function cpSwitchTab(el: HTMLElement, panelId: string) {
@@ -386,8 +401,25 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
         btn.classList.toggle('open');
         (btn.nextElementSibling as HTMLElement).classList.toggle('open');
       }
+      function cpZoom(img: HTMLImageElement) {
+        const box = document.getElementById('cpLightbox')!;
+        const big = box.querySelector('img') as HTMLImageElement;
+        big.src = img.src;
+        big.alt = img.alt;
+        box.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function cpCloseZoom() {
+        document.getElementById('cpLightbox')!.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') cpCloseZoom();
+      });
       (window as any).cpSwitchTab = cpSwitchTab;
       (window as any).cpToggle = cpToggle;
+      (window as any).cpZoom = cpZoom;
+      (window as any).cpCloseZoom = cpCloseZoom;
     </script>
   </body>
 </html>
