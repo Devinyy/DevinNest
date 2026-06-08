@@ -995,7 +995,7 @@
     };
   }
   function bindIndex(parent, group, enter2, update2, exit2, data) {
-    var i2 = 0, node2, groupLength2 = group.length, dataLength = data.length;
+    var i2 = 0, node2, groupLength = group.length, dataLength = data.length;
     for (; i2 < dataLength; ++i2) {
       if (node2 = group[i2]) {
         node2.__data__ = data[i2];
@@ -1004,15 +1004,15 @@
         enter2[i2] = new EnterNode(parent, data[i2]);
       }
     }
-    for (; i2 < groupLength2; ++i2) {
+    for (; i2 < groupLength; ++i2) {
       if (node2 = group[i2]) {
         exit2[i2] = node2;
       }
     }
   }
   function bindKey(parent, group, enter2, update2, exit2, data, key) {
-    var i2, node2, nodeByKeyValue = /* @__PURE__ */ new Map(), groupLength2 = group.length, dataLength = data.length, keyValues = new Array(groupLength2), keyValue;
-    for (i2 = 0; i2 < groupLength2; ++i2) {
+    var i2, node2, nodeByKeyValue = /* @__PURE__ */ new Map(), groupLength = group.length, dataLength = data.length, keyValues = new Array(groupLength), keyValue;
+    for (i2 = 0; i2 < groupLength; ++i2) {
       if (node2 = group[i2]) {
         keyValues[i2] = keyValue = key.call(node2, node2.__data__, i2, group) + "";
         if (nodeByKeyValue.has(keyValue)) {
@@ -1032,7 +1032,7 @@
         enter2[i2] = new EnterNode(parent, data[i2]);
       }
     }
-    for (i2 = 0; i2 < groupLength2; ++i2) {
+    for (i2 = 0; i2 < groupLength; ++i2) {
       if ((node2 = group[i2]) && nodeByKeyValue.get(keyValues[i2]) === node2) {
         exit2[i2] = node2;
       }
@@ -1048,7 +1048,7 @@
     if (typeof value2 !== "function")
       value2 = constant$5(value2);
     for (var m = groups.length, update2 = new Array(m), enter2 = new Array(m), exit2 = new Array(m), j = 0; j < m; ++j) {
-      var parent = parents2[j], group = groups[j], groupLength2 = group.length, data = arraylike(value2.call(parent, parent && parent.__data__, j, parents2)), dataLength = data.length, enterGroup = enter2[j] = new Array(dataLength), updateGroup = update2[j] = new Array(dataLength), exitGroup = exit2[j] = new Array(groupLength2);
+      var parent = parents2[j], group = groups[j], groupLength = group.length, data = arraylike(value2.call(parent, parent && parent.__data__, j, parents2)), dataLength = data.length, enterGroup = enter2[j] = new Array(dataLength), updateGroup = update2[j] = new Array(dataLength), exitGroup = exit2[j] = new Array(groupLength);
       bind(parent, group, enterGroup, updateGroup, exitGroup, data, key);
       for (var i0 = 0, i1 = 0, previous2, next2; i0 < dataLength; ++i0) {
         if (previous2 = enterGroup[i0]) {
@@ -5866,7 +5866,7 @@
     }
   };
   Transform.prototype;
-  /*! @license DOMPurify 3.2.4 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.2.4/LICENSE */
+  /*! @license DOMPurify 3.4.2 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.4.2/LICENSE */
   const {
     entries,
     setPrototypeOf,
@@ -5894,12 +5894,18 @@
     };
   }
   if (!apply$2) {
-    apply$2 = function apply2(fun, thisValue, args) {
-      return fun.apply(thisValue, args);
+    apply$2 = function apply2(func, thisArg) {
+      for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
+      }
+      return func.apply(thisArg, args);
     };
   }
   if (!construct) {
-    construct = function construct2(Func, args) {
+    construct = function construct2(Func) {
+      for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        args[_key2 - 1] = arguments[_key2];
+      }
       return new Func(...args);
     };
   }
@@ -5908,35 +5914,47 @@
   const arrayPop = unapply(Array.prototype.pop);
   const arrayPush$1 = unapply(Array.prototype.push);
   const arraySplice = unapply(Array.prototype.splice);
+  const arrayIsArray = Array.isArray;
   const stringToLowerCase = unapply(String.prototype.toLowerCase);
   const stringToString = unapply(String.prototype.toString);
   const stringMatch = unapply(String.prototype.match);
   const stringReplace = unapply(String.prototype.replace);
   const stringIndexOf = unapply(String.prototype.indexOf);
   const stringTrim = unapply(String.prototype.trim);
+  const numberToString = unapply(Number.prototype.toString);
+  const booleanToString = unapply(Boolean.prototype.toString);
+  const bigintToString = typeof BigInt === "undefined" ? null : unapply(BigInt.prototype.toString);
+  const symbolToString$1 = typeof Symbol === "undefined" ? null : unapply(Symbol.prototype.toString);
   const objectHasOwnProperty = unapply(Object.prototype.hasOwnProperty);
+  const objectToString$1 = unapply(Object.prototype.toString);
   const regExpTest = unapply(RegExp.prototype.test);
   const typeErrorCreate = unconstruct(TypeError);
   function unapply(func) {
     return function(thisArg) {
-      for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        args[_key - 1] = arguments[_key];
+      if (thisArg instanceof RegExp) {
+        thisArg.lastIndex = 0;
+      }
+      for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        args[_key3 - 1] = arguments[_key3];
       }
       return apply$2(func, thisArg, args);
     };
   }
-  function unconstruct(func) {
+  function unconstruct(Func) {
     return function() {
-      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+      for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        args[_key4] = arguments[_key4];
       }
-      return construct(func, args);
+      return construct(Func, args);
     };
   }
   function addToSet(set2, array2) {
     let transformCaseFunc = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : stringToLowerCase;
     if (setPrototypeOf) {
       setPrototypeOf(set2, null);
+    }
+    if (!arrayIsArray(array2)) {
+      return set2;
     }
     let l = array2.length;
     while (l--) {
@@ -5968,7 +5986,7 @@
     for (const [property2, value2] of entries(object2)) {
       const isPropertyExist = objectHasOwnProperty(object2, property2);
       if (isPropertyExist) {
-        if (Array.isArray(value2)) {
+        if (arrayIsArray(value2)) {
           newObject[property2] = cleanArray(value2);
         } else if (value2 && typeof value2 === "object" && value2.constructor === Object) {
           newObject[property2] = clone$2(value2);
@@ -5978,6 +5996,44 @@
       }
     }
     return newObject;
+  }
+  function stringifyValue(value2) {
+    switch (typeof value2) {
+      case "string": {
+        return value2;
+      }
+      case "number": {
+        return numberToString(value2);
+      }
+      case "boolean": {
+        return booleanToString(value2);
+      }
+      case "bigint": {
+        return bigintToString ? bigintToString(value2) : "0";
+      }
+      case "symbol": {
+        return symbolToString$1 ? symbolToString$1(value2) : "Symbol()";
+      }
+      case "undefined": {
+        return objectToString$1(value2);
+      }
+      case "function":
+      case "object": {
+        if (value2 === null) {
+          return objectToString$1(value2);
+        }
+        const valueAsRecord = value2;
+        const valueToString = lookupGetter(valueAsRecord, "toString");
+        if (typeof valueToString === "function") {
+          const stringified = valueToString(valueAsRecord);
+          return typeof stringified === "string" ? stringified : objectToString$1(stringified);
+        }
+        return objectToString$1(value2);
+      }
+      default: {
+        return objectToString$1(value2);
+      }
+    }
   }
   function lookupGetter(object2, prop) {
     while (object2 !== null) {
@@ -5997,16 +6053,24 @@
     }
     return fallbackValue;
   }
-  const html$1 = freeze(["a", "abbr", "acronym", "address", "area", "article", "aside", "audio", "b", "bdi", "bdo", "big", "blink", "blockquote", "body", "br", "button", "canvas", "caption", "center", "cite", "code", "col", "colgroup", "content", "data", "datalist", "dd", "decorator", "del", "details", "dfn", "dialog", "dir", "div", "dl", "dt", "element", "em", "fieldset", "figcaption", "figure", "font", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "img", "input", "ins", "kbd", "label", "legend", "li", "main", "map", "mark", "marquee", "menu", "menuitem", "meter", "nav", "nobr", "ol", "optgroup", "option", "output", "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "section", "select", "shadow", "small", "source", "spacer", "span", "strike", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "tr", "track", "tt", "u", "ul", "var", "video", "wbr"]);
-  const svg$1 = freeze(["svg", "a", "altglyph", "altglyphdef", "altglyphitem", "animatecolor", "animatemotion", "animatetransform", "circle", "clippath", "defs", "desc", "ellipse", "filter", "font", "g", "glyph", "glyphref", "hkern", "image", "line", "lineargradient", "marker", "mask", "metadata", "mpath", "path", "pattern", "polygon", "polyline", "radialgradient", "rect", "stop", "style", "switch", "symbol", "text", "textpath", "title", "tref", "tspan", "view", "vkern"]);
+  function isRegex(value2) {
+    try {
+      regExpTest(value2, "");
+      return true;
+    } catch (_unused) {
+      return false;
+    }
+  }
+  const html$1 = freeze(["a", "abbr", "acronym", "address", "area", "article", "aside", "audio", "b", "bdi", "bdo", "big", "blink", "blockquote", "body", "br", "button", "canvas", "caption", "center", "cite", "code", "col", "colgroup", "content", "data", "datalist", "dd", "decorator", "del", "details", "dfn", "dialog", "dir", "div", "dl", "dt", "element", "em", "fieldset", "figcaption", "figure", "font", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "img", "input", "ins", "kbd", "label", "legend", "li", "main", "map", "mark", "marquee", "menu", "menuitem", "meter", "nav", "nobr", "ol", "optgroup", "option", "output", "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "search", "section", "select", "shadow", "slot", "small", "source", "spacer", "span", "strike", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "tr", "track", "tt", "u", "ul", "var", "video", "wbr"]);
+  const svg$1 = freeze(["svg", "a", "altglyph", "altglyphdef", "altglyphitem", "animatecolor", "animatemotion", "animatetransform", "circle", "clippath", "defs", "desc", "ellipse", "enterkeyhint", "exportparts", "filter", "font", "g", "glyph", "glyphref", "hkern", "image", "inputmode", "line", "lineargradient", "marker", "mask", "metadata", "mpath", "part", "path", "pattern", "polygon", "polyline", "radialgradient", "rect", "stop", "style", "switch", "symbol", "text", "textpath", "title", "tref", "tspan", "view", "vkern"]);
   const svgFilters = freeze(["feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix", "feDiffuseLighting", "feDisplacementMap", "feDistantLight", "feDropShadow", "feFlood", "feFuncA", "feFuncB", "feFuncG", "feFuncR", "feGaussianBlur", "feImage", "feMerge", "feMergeNode", "feMorphology", "feOffset", "fePointLight", "feSpecularLighting", "feSpotLight", "feTile", "feTurbulence"]);
   const svgDisallowed = freeze(["animate", "color-profile", "cursor", "discard", "font-face", "font-face-format", "font-face-name", "font-face-src", "font-face-uri", "foreignobject", "hatch", "hatchpath", "mesh", "meshgradient", "meshpatch", "meshrow", "missing-glyph", "script", "set", "solidcolor", "unknown", "use"]);
   const mathMl$1 = freeze(["math", "menclose", "merror", "mfenced", "mfrac", "mglyph", "mi", "mlabeledtr", "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom", "mroot", "mrow", "ms", "mspace", "msqrt", "mstyle", "msub", "msup", "msubsup", "mtable", "mtd", "mtext", "mtr", "munder", "munderover", "mprescripts"]);
   const mathMlDisallowed = freeze(["maction", "maligngroup", "malignmark", "mlongdiv", "mscarries", "mscarry", "msgroup", "mstack", "msline", "msrow", "semantics", "annotation", "annotation-xml", "mprescripts", "none"]);
   const text$3 = freeze(["#text"]);
-  const html = freeze(["accept", "action", "align", "alt", "autocapitalize", "autocomplete", "autopictureinpicture", "autoplay", "background", "bgcolor", "border", "capture", "cellpadding", "cellspacing", "checked", "cite", "class", "clear", "color", "cols", "colspan", "controls", "controlslist", "coords", "crossorigin", "datetime", "decoding", "default", "dir", "disabled", "disablepictureinpicture", "disableremoteplayback", "download", "draggable", "enctype", "enterkeyhint", "face", "for", "headers", "height", "hidden", "high", "href", "hreflang", "id", "inputmode", "integrity", "ismap", "kind", "label", "lang", "list", "loading", "loop", "low", "max", "maxlength", "media", "method", "min", "minlength", "multiple", "muted", "name", "nonce", "noshade", "novalidate", "nowrap", "open", "optimum", "pattern", "placeholder", "playsinline", "popover", "popovertarget", "popovertargetaction", "poster", "preload", "pubdate", "radiogroup", "readonly", "rel", "required", "rev", "reversed", "role", "rows", "rowspan", "spellcheck", "scope", "selected", "shape", "size", "sizes", "span", "srclang", "start", "src", "srcset", "step", "style", "summary", "tabindex", "title", "translate", "type", "usemap", "valign", "value", "width", "wrap", "xmlns", "slot"]);
-  const svg = freeze(["accent-height", "accumulate", "additive", "alignment-baseline", "amplitude", "ascent", "attributename", "attributetype", "azimuth", "basefrequency", "baseline-shift", "begin", "bias", "by", "class", "clip", "clippathunits", "clip-path", "clip-rule", "color", "color-interpolation", "color-interpolation-filters", "color-profile", "color-rendering", "cx", "cy", "d", "dx", "dy", "diffuseconstant", "direction", "display", "divisor", "dur", "edgemode", "elevation", "end", "exponent", "fill", "fill-opacity", "fill-rule", "filter", "filterunits", "flood-color", "flood-opacity", "font-family", "font-size", "font-size-adjust", "font-stretch", "font-style", "font-variant", "font-weight", "fx", "fy", "g1", "g2", "glyph-name", "glyphref", "gradientunits", "gradienttransform", "height", "href", "id", "image-rendering", "in", "in2", "intercept", "k", "k1", "k2", "k3", "k4", "kerning", "keypoints", "keysplines", "keytimes", "lang", "lengthadjust", "letter-spacing", "kernelmatrix", "kernelunitlength", "lighting-color", "local", "marker-end", "marker-mid", "marker-start", "markerheight", "markerunits", "markerwidth", "maskcontentunits", "maskunits", "max", "mask", "media", "method", "mode", "min", "name", "numoctaves", "offset", "operator", "opacity", "order", "orient", "orientation", "origin", "overflow", "paint-order", "path", "pathlength", "patterncontentunits", "patterntransform", "patternunits", "points", "preservealpha", "preserveaspectratio", "primitiveunits", "r", "rx", "ry", "radius", "refx", "refy", "repeatcount", "repeatdur", "restart", "result", "rotate", "scale", "seed", "shape-rendering", "slope", "specularconstant", "specularexponent", "spreadmethod", "startoffset", "stddeviation", "stitchtiles", "stop-color", "stop-opacity", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity", "stroke", "stroke-width", "style", "surfacescale", "systemlanguage", "tabindex", "tablevalues", "targetx", "targety", "transform", "transform-origin", "text-anchor", "text-decoration", "text-rendering", "textlength", "type", "u1", "u2", "unicode", "values", "viewbox", "visibility", "version", "vert-adv-y", "vert-origin-x", "vert-origin-y", "width", "word-spacing", "wrap", "writing-mode", "xchannelselector", "ychannelselector", "x", "x1", "x2", "xmlns", "y", "y1", "y2", "z", "zoomandpan"]);
-  const mathMl = freeze(["accent", "accentunder", "align", "bevelled", "close", "columnsalign", "columnlines", "columnspan", "denomalign", "depth", "dir", "display", "displaystyle", "encoding", "fence", "frame", "height", "href", "id", "largeop", "length", "linethickness", "lspace", "lquote", "mathbackground", "mathcolor", "mathsize", "mathvariant", "maxsize", "minsize", "movablelimits", "notation", "numalign", "open", "rowalign", "rowlines", "rowspacing", "rowspan", "rspace", "rquote", "scriptlevel", "scriptminsize", "scriptsizemultiplier", "selection", "separator", "separators", "stretchy", "subscriptshift", "supscriptshift", "symmetric", "voffset", "width", "xmlns"]);
+  const html = freeze(["accept", "action", "align", "alt", "autocapitalize", "autocomplete", "autopictureinpicture", "autoplay", "background", "bgcolor", "border", "capture", "cellpadding", "cellspacing", "checked", "cite", "class", "clear", "color", "cols", "colspan", "controls", "controlslist", "coords", "crossorigin", "datetime", "decoding", "default", "dir", "disabled", "disablepictureinpicture", "disableremoteplayback", "download", "draggable", "enctype", "enterkeyhint", "exportparts", "face", "for", "headers", "height", "hidden", "high", "href", "hreflang", "id", "inert", "inputmode", "integrity", "ismap", "kind", "label", "lang", "list", "loading", "loop", "low", "max", "maxlength", "media", "method", "min", "minlength", "multiple", "muted", "name", "nonce", "noshade", "novalidate", "nowrap", "open", "optimum", "part", "pattern", "placeholder", "playsinline", "popover", "popovertarget", "popovertargetaction", "poster", "preload", "pubdate", "radiogroup", "readonly", "rel", "required", "rev", "reversed", "role", "rows", "rowspan", "spellcheck", "scope", "selected", "shape", "size", "sizes", "slot", "span", "srclang", "start", "src", "srcset", "step", "style", "summary", "tabindex", "title", "translate", "type", "usemap", "valign", "value", "width", "wrap", "xmlns"]);
+  const svg = freeze(["accent-height", "accumulate", "additive", "alignment-baseline", "amplitude", "ascent", "attributename", "attributetype", "azimuth", "basefrequency", "baseline-shift", "begin", "bias", "by", "class", "clip", "clippathunits", "clip-path", "clip-rule", "color", "color-interpolation", "color-interpolation-filters", "color-profile", "color-rendering", "cx", "cy", "d", "dx", "dy", "diffuseconstant", "direction", "display", "divisor", "dur", "edgemode", "elevation", "end", "exponent", "fill", "fill-opacity", "fill-rule", "filter", "filterunits", "flood-color", "flood-opacity", "font-family", "font-size", "font-size-adjust", "font-stretch", "font-style", "font-variant", "font-weight", "fx", "fy", "g1", "g2", "glyph-name", "glyphref", "gradientunits", "gradienttransform", "height", "href", "id", "image-rendering", "in", "in2", "intercept", "k", "k1", "k2", "k3", "k4", "kerning", "keypoints", "keysplines", "keytimes", "lang", "lengthadjust", "letter-spacing", "kernelmatrix", "kernelunitlength", "lighting-color", "local", "marker-end", "marker-mid", "marker-start", "markerheight", "markerunits", "markerwidth", "maskcontentunits", "maskunits", "max", "mask", "mask-type", "media", "method", "mode", "min", "name", "numoctaves", "offset", "operator", "opacity", "order", "orient", "orientation", "origin", "overflow", "paint-order", "path", "pathlength", "patterncontentunits", "patterntransform", "patternunits", "points", "preservealpha", "preserveaspectratio", "primitiveunits", "r", "rx", "ry", "radius", "refx", "refy", "repeatcount", "repeatdur", "restart", "result", "rotate", "scale", "seed", "shape-rendering", "slope", "specularconstant", "specularexponent", "spreadmethod", "startoffset", "stddeviation", "stitchtiles", "stop-color", "stop-opacity", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity", "stroke", "stroke-width", "style", "surfacescale", "systemlanguage", "tabindex", "tablevalues", "targetx", "targety", "transform", "transform-origin", "text-anchor", "text-decoration", "text-rendering", "textlength", "type", "u1", "u2", "unicode", "values", "viewbox", "visibility", "version", "vert-adv-y", "vert-origin-x", "vert-origin-y", "width", "word-spacing", "wrap", "writing-mode", "xchannelselector", "ychannelselector", "x", "x1", "x2", "xmlns", "y", "y1", "y2", "z", "zoomandpan"]);
+  const mathMl = freeze(["accent", "accentunder", "align", "bevelled", "close", "columnalign", "columnlines", "columnspacing", "columnspan", "denomalign", "depth", "dir", "display", "displaystyle", "encoding", "fence", "frame", "height", "href", "id", "largeop", "length", "linethickness", "lquote", "lspace", "mathbackground", "mathcolor", "mathsize", "mathvariant", "maxsize", "minsize", "movablelimits", "notation", "numalign", "open", "rowalign", "rowlines", "rowspacing", "rowspan", "rspace", "rquote", "scriptlevel", "scriptminsize", "scriptsizemultiplier", "selection", "separator", "separators", "stretchy", "subscriptshift", "supscriptshift", "symmetric", "voffset", "width", "xmlns"]);
   const xml = freeze(["xlink:href", "xml:id", "xlink:title", "xml:space", "xmlns:xlink"]);
   const MUSTACHE_EXPR = seal(/\{\{[\w\W]*|[\w\W]*\}\}/gm);
   const ERB_EXPR = seal(/<%[\w\W]*|[\w\W]*%>/gm);
@@ -6014,7 +6078,7 @@
   const DATA_ATTR = seal(/^data-[\-\w.\u00B7-\uFFFF]+$/);
   const ARIA_ATTR = seal(/^aria-[\-\w]+$/);
   const IS_ALLOWED_URI = seal(
-    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|matrix):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
     // eslint-disable-line no-useless-escape
   );
   const IS_SCRIPT_OR_DATA = seal(/^(?:\w+script|data):/i);
@@ -6039,20 +6103,11 @@
   });
   const NODE_TYPE = {
     element: 1,
-    attribute: 2,
     text: 3,
-    cdataSection: 4,
-    entityReference: 5,
-    // Deprecated
-    entityNode: 6,
     // Deprecated
     progressingInstruction: 7,
     comment: 8,
-    document: 9,
-    documentType: 10,
-    documentFragment: 11,
-    notation: 12
-    // Deprecated
+    document: 9
   };
   const getGlobal = function getGlobal2() {
     return typeof window === "undefined" ? null : window;
@@ -6097,7 +6152,7 @@
   function createDOMPurify() {
     let window2 = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : getGlobal();
     const DOMPurify = (root2) => createDOMPurify(root2);
-    DOMPurify.version = "3.2.4";
+    DOMPurify.version = "3.4.2";
     DOMPurify.removed = [];
     if (!window2 || !window2.document || window2.document.nodeType !== NODE_TYPE.document || !window2.Element) {
       DOMPurify.isSupported = false;
@@ -6183,6 +6238,20 @@
     }));
     let FORBID_TAGS = null;
     let FORBID_ATTR = null;
+    const EXTRA_ELEMENT_HANDLING = Object.seal(create(null, {
+      tagCheck: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: null
+      },
+      attributeCheck: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: null
+      }
+    }));
     let ALLOW_ARIA_ATTR = true;
     let ALLOW_DATA_ATTR = true;
     let ALLOW_UNKNOWN_PROTOCOLS = false;
@@ -6238,15 +6307,15 @@
       PARSER_MEDIA_TYPE = // eslint-disable-next-line unicorn/prefer-includes
       SUPPORTED_PARSER_MEDIA_TYPES.indexOf(cfg.PARSER_MEDIA_TYPE) === -1 ? DEFAULT_PARSER_MEDIA_TYPE : cfg.PARSER_MEDIA_TYPE;
       transformCaseFunc = PARSER_MEDIA_TYPE === "application/xhtml+xml" ? stringToString : stringToLowerCase;
-      ALLOWED_TAGS = objectHasOwnProperty(cfg, "ALLOWED_TAGS") ? addToSet({}, cfg.ALLOWED_TAGS, transformCaseFunc) : DEFAULT_ALLOWED_TAGS;
-      ALLOWED_ATTR = objectHasOwnProperty(cfg, "ALLOWED_ATTR") ? addToSet({}, cfg.ALLOWED_ATTR, transformCaseFunc) : DEFAULT_ALLOWED_ATTR;
-      ALLOWED_NAMESPACES = objectHasOwnProperty(cfg, "ALLOWED_NAMESPACES") ? addToSet({}, cfg.ALLOWED_NAMESPACES, stringToString) : DEFAULT_ALLOWED_NAMESPACES;
-      URI_SAFE_ATTRIBUTES = objectHasOwnProperty(cfg, "ADD_URI_SAFE_ATTR") ? addToSet(clone$2(DEFAULT_URI_SAFE_ATTRIBUTES), cfg.ADD_URI_SAFE_ATTR, transformCaseFunc) : DEFAULT_URI_SAFE_ATTRIBUTES;
-      DATA_URI_TAGS = objectHasOwnProperty(cfg, "ADD_DATA_URI_TAGS") ? addToSet(clone$2(DEFAULT_DATA_URI_TAGS), cfg.ADD_DATA_URI_TAGS, transformCaseFunc) : DEFAULT_DATA_URI_TAGS;
-      FORBID_CONTENTS = objectHasOwnProperty(cfg, "FORBID_CONTENTS") ? addToSet({}, cfg.FORBID_CONTENTS, transformCaseFunc) : DEFAULT_FORBID_CONTENTS;
-      FORBID_TAGS = objectHasOwnProperty(cfg, "FORBID_TAGS") ? addToSet({}, cfg.FORBID_TAGS, transformCaseFunc) : {};
-      FORBID_ATTR = objectHasOwnProperty(cfg, "FORBID_ATTR") ? addToSet({}, cfg.FORBID_ATTR, transformCaseFunc) : {};
-      USE_PROFILES = objectHasOwnProperty(cfg, "USE_PROFILES") ? cfg.USE_PROFILES : false;
+      ALLOWED_TAGS = objectHasOwnProperty(cfg, "ALLOWED_TAGS") && arrayIsArray(cfg.ALLOWED_TAGS) ? addToSet({}, cfg.ALLOWED_TAGS, transformCaseFunc) : DEFAULT_ALLOWED_TAGS;
+      ALLOWED_ATTR = objectHasOwnProperty(cfg, "ALLOWED_ATTR") && arrayIsArray(cfg.ALLOWED_ATTR) ? addToSet({}, cfg.ALLOWED_ATTR, transformCaseFunc) : DEFAULT_ALLOWED_ATTR;
+      ALLOWED_NAMESPACES = objectHasOwnProperty(cfg, "ALLOWED_NAMESPACES") && arrayIsArray(cfg.ALLOWED_NAMESPACES) ? addToSet({}, cfg.ALLOWED_NAMESPACES, stringToString) : DEFAULT_ALLOWED_NAMESPACES;
+      URI_SAFE_ATTRIBUTES = objectHasOwnProperty(cfg, "ADD_URI_SAFE_ATTR") && arrayIsArray(cfg.ADD_URI_SAFE_ATTR) ? addToSet(clone$2(DEFAULT_URI_SAFE_ATTRIBUTES), cfg.ADD_URI_SAFE_ATTR, transformCaseFunc) : DEFAULT_URI_SAFE_ATTRIBUTES;
+      DATA_URI_TAGS = objectHasOwnProperty(cfg, "ADD_DATA_URI_TAGS") && arrayIsArray(cfg.ADD_DATA_URI_TAGS) ? addToSet(clone$2(DEFAULT_DATA_URI_TAGS), cfg.ADD_DATA_URI_TAGS, transformCaseFunc) : DEFAULT_DATA_URI_TAGS;
+      FORBID_CONTENTS = objectHasOwnProperty(cfg, "FORBID_CONTENTS") && arrayIsArray(cfg.FORBID_CONTENTS) ? addToSet({}, cfg.FORBID_CONTENTS, transformCaseFunc) : DEFAULT_FORBID_CONTENTS;
+      FORBID_TAGS = objectHasOwnProperty(cfg, "FORBID_TAGS") && arrayIsArray(cfg.FORBID_TAGS) ? addToSet({}, cfg.FORBID_TAGS, transformCaseFunc) : clone$2({});
+      FORBID_ATTR = objectHasOwnProperty(cfg, "FORBID_ATTR") && arrayIsArray(cfg.FORBID_ATTR) ? addToSet({}, cfg.FORBID_ATTR, transformCaseFunc) : clone$2({});
+      USE_PROFILES = objectHasOwnProperty(cfg, "USE_PROFILES") ? cfg.USE_PROFILES && typeof cfg.USE_PROFILES === "object" ? clone$2(cfg.USE_PROFILES) : cfg.USE_PROFILES : false;
       ALLOW_ARIA_ATTR = cfg.ALLOW_ARIA_ATTR !== false;
       ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR !== false;
       ALLOW_UNKNOWN_PROTOCOLS = cfg.ALLOW_UNKNOWN_PROTOCOLS || false;
@@ -6262,19 +6331,20 @@
       SANITIZE_NAMED_PROPS = cfg.SANITIZE_NAMED_PROPS || false;
       KEEP_CONTENT = cfg.KEEP_CONTENT !== false;
       IN_PLACE = cfg.IN_PLACE || false;
-      IS_ALLOWED_URI$1 = cfg.ALLOWED_URI_REGEXP || IS_ALLOWED_URI;
-      NAMESPACE = cfg.NAMESPACE || HTML_NAMESPACE;
-      MATHML_TEXT_INTEGRATION_POINTS = cfg.MATHML_TEXT_INTEGRATION_POINTS || MATHML_TEXT_INTEGRATION_POINTS;
-      HTML_INTEGRATION_POINTS = cfg.HTML_INTEGRATION_POINTS || HTML_INTEGRATION_POINTS;
-      CUSTOM_ELEMENT_HANDLING = cfg.CUSTOM_ELEMENT_HANDLING || {};
-      if (cfg.CUSTOM_ELEMENT_HANDLING && isRegexOrFunction(cfg.CUSTOM_ELEMENT_HANDLING.tagNameCheck)) {
-        CUSTOM_ELEMENT_HANDLING.tagNameCheck = cfg.CUSTOM_ELEMENT_HANDLING.tagNameCheck;
+      IS_ALLOWED_URI$1 = isRegex(cfg.ALLOWED_URI_REGEXP) ? cfg.ALLOWED_URI_REGEXP : IS_ALLOWED_URI;
+      NAMESPACE = typeof cfg.NAMESPACE === "string" ? cfg.NAMESPACE : HTML_NAMESPACE;
+      MATHML_TEXT_INTEGRATION_POINTS = objectHasOwnProperty(cfg, "MATHML_TEXT_INTEGRATION_POINTS") && cfg.MATHML_TEXT_INTEGRATION_POINTS && typeof cfg.MATHML_TEXT_INTEGRATION_POINTS === "object" ? clone$2(cfg.MATHML_TEXT_INTEGRATION_POINTS) : addToSet({}, ["mi", "mo", "mn", "ms", "mtext"]);
+      HTML_INTEGRATION_POINTS = objectHasOwnProperty(cfg, "HTML_INTEGRATION_POINTS") && cfg.HTML_INTEGRATION_POINTS && typeof cfg.HTML_INTEGRATION_POINTS === "object" ? clone$2(cfg.HTML_INTEGRATION_POINTS) : addToSet({}, ["annotation-xml"]);
+      const customElementHandling = objectHasOwnProperty(cfg, "CUSTOM_ELEMENT_HANDLING") && cfg.CUSTOM_ELEMENT_HANDLING && typeof cfg.CUSTOM_ELEMENT_HANDLING === "object" ? clone$2(cfg.CUSTOM_ELEMENT_HANDLING) : create(null);
+      CUSTOM_ELEMENT_HANDLING = create(null);
+      if (objectHasOwnProperty(customElementHandling, "tagNameCheck") && isRegexOrFunction(customElementHandling.tagNameCheck)) {
+        CUSTOM_ELEMENT_HANDLING.tagNameCheck = customElementHandling.tagNameCheck;
       }
-      if (cfg.CUSTOM_ELEMENT_HANDLING && isRegexOrFunction(cfg.CUSTOM_ELEMENT_HANDLING.attributeNameCheck)) {
-        CUSTOM_ELEMENT_HANDLING.attributeNameCheck = cfg.CUSTOM_ELEMENT_HANDLING.attributeNameCheck;
+      if (objectHasOwnProperty(customElementHandling, "attributeNameCheck") && isRegexOrFunction(customElementHandling.attributeNameCheck)) {
+        CUSTOM_ELEMENT_HANDLING.attributeNameCheck = customElementHandling.attributeNameCheck;
       }
-      if (cfg.CUSTOM_ELEMENT_HANDLING && typeof cfg.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements === "boolean") {
-        CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements = cfg.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements;
+      if (objectHasOwnProperty(customElementHandling, "allowCustomizedBuiltInElements") && typeof customElementHandling.allowCustomizedBuiltInElements === "boolean") {
+        CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements = customElementHandling.allowCustomizedBuiltInElements;
       }
       if (SAFE_FOR_TEMPLATES) {
         ALLOW_DATA_ATTR = false;
@@ -6284,7 +6354,7 @@
       }
       if (USE_PROFILES) {
         ALLOWED_TAGS = addToSet({}, text$3);
-        ALLOWED_ATTR = [];
+        ALLOWED_ATTR = create(null);
         if (USE_PROFILES.html === true) {
           addToSet(ALLOWED_TAGS, html$1);
           addToSet(ALLOWED_ATTR, html);
@@ -6305,26 +6375,42 @@
           addToSet(ALLOWED_ATTR, xml);
         }
       }
-      if (cfg.ADD_TAGS) {
-        if (ALLOWED_TAGS === DEFAULT_ALLOWED_TAGS) {
-          ALLOWED_TAGS = clone$2(ALLOWED_TAGS);
+      EXTRA_ELEMENT_HANDLING.tagCheck = null;
+      EXTRA_ELEMENT_HANDLING.attributeCheck = null;
+      if (objectHasOwnProperty(cfg, "ADD_TAGS")) {
+        if (typeof cfg.ADD_TAGS === "function") {
+          EXTRA_ELEMENT_HANDLING.tagCheck = cfg.ADD_TAGS;
+        } else if (arrayIsArray(cfg.ADD_TAGS)) {
+          if (ALLOWED_TAGS === DEFAULT_ALLOWED_TAGS) {
+            ALLOWED_TAGS = clone$2(ALLOWED_TAGS);
+          }
+          addToSet(ALLOWED_TAGS, cfg.ADD_TAGS, transformCaseFunc);
         }
-        addToSet(ALLOWED_TAGS, cfg.ADD_TAGS, transformCaseFunc);
       }
-      if (cfg.ADD_ATTR) {
-        if (ALLOWED_ATTR === DEFAULT_ALLOWED_ATTR) {
-          ALLOWED_ATTR = clone$2(ALLOWED_ATTR);
+      if (objectHasOwnProperty(cfg, "ADD_ATTR")) {
+        if (typeof cfg.ADD_ATTR === "function") {
+          EXTRA_ELEMENT_HANDLING.attributeCheck = cfg.ADD_ATTR;
+        } else if (arrayIsArray(cfg.ADD_ATTR)) {
+          if (ALLOWED_ATTR === DEFAULT_ALLOWED_ATTR) {
+            ALLOWED_ATTR = clone$2(ALLOWED_ATTR);
+          }
+          addToSet(ALLOWED_ATTR, cfg.ADD_ATTR, transformCaseFunc);
         }
-        addToSet(ALLOWED_ATTR, cfg.ADD_ATTR, transformCaseFunc);
       }
-      if (cfg.ADD_URI_SAFE_ATTR) {
+      if (objectHasOwnProperty(cfg, "ADD_URI_SAFE_ATTR") && arrayIsArray(cfg.ADD_URI_SAFE_ATTR)) {
         addToSet(URI_SAFE_ATTRIBUTES, cfg.ADD_URI_SAFE_ATTR, transformCaseFunc);
       }
-      if (cfg.FORBID_CONTENTS) {
+      if (objectHasOwnProperty(cfg, "FORBID_CONTENTS") && arrayIsArray(cfg.FORBID_CONTENTS)) {
         if (FORBID_CONTENTS === DEFAULT_FORBID_CONTENTS) {
           FORBID_CONTENTS = clone$2(FORBID_CONTENTS);
         }
         addToSet(FORBID_CONTENTS, cfg.FORBID_CONTENTS, transformCaseFunc);
+      }
+      if (objectHasOwnProperty(cfg, "ADD_FORBID_CONTENTS") && arrayIsArray(cfg.ADD_FORBID_CONTENTS)) {
+        if (FORBID_CONTENTS === DEFAULT_FORBID_CONTENTS) {
+          FORBID_CONTENTS = clone$2(FORBID_CONTENTS);
+        }
+        addToSet(FORBID_CONTENTS, cfg.ADD_FORBID_CONTENTS, transformCaseFunc);
       }
       if (KEEP_CONTENT) {
         ALLOWED_TAGS["#text"] = true;
@@ -6509,7 +6595,11 @@
         tagName,
         allowedTags: ALLOWED_TAGS
       });
-      if (currentNode.hasChildNodes() && !_isNode(currentNode.firstElementChild) && regExpTest(/<[/\w]/g, currentNode.innerHTML) && regExpTest(/<[/\w]/g, currentNode.textContent)) {
+      if (SAFE_FOR_XML && currentNode.hasChildNodes() && !_isNode(currentNode.firstElementChild) && regExpTest(/<[/\w!]/g, currentNode.innerHTML) && regExpTest(/<[/\w!]/g, currentNode.textContent)) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      if (SAFE_FOR_XML && currentNode.namespaceURI === HTML_NAMESPACE && tagName === "style" && _isNode(currentNode.firstElementChild)) {
         _forceRemove(currentNode);
         return true;
       }
@@ -6521,7 +6611,7 @@
         _forceRemove(currentNode);
         return true;
       }
-      if (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName]) {
+      if (FORBID_TAGS[tagName] || !(EXTRA_ELEMENT_HANDLING.tagCheck instanceof Function && EXTRA_ELEMENT_HANDLING.tagCheck(tagName)) && !ALLOWED_TAGS[tagName]) {
         if (!FORBID_TAGS[tagName] && _isBasicCustomElement(tagName)) {
           if (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, tagName)) {
             return false;
@@ -6537,7 +6627,6 @@
             const childCount = childNodes.length;
             for (let i2 = childCount - 1; i2 >= 0; --i2) {
               const childClone = cloneNode(childNodes[i2], true);
-              childClone.__removalCount = (currentNode.__removalCount || 0) + 1;
               parentNode.insertBefore(childClone, getNextSibling(currentNode));
             }
           }
@@ -6569,19 +6658,23 @@
       return false;
     };
     const _isValidAttribute = function _isValidAttribute2(lcTag, lcName, value2) {
+      if (FORBID_ATTR[lcName]) {
+        return false;
+      }
       if (SANITIZE_DOM && (lcName === "id" || lcName === "name") && (value2 in document2 || value2 in formElement)) {
         return false;
       }
+      const nameIsPermitted = ALLOWED_ATTR[lcName] || EXTRA_ELEMENT_HANDLING.attributeCheck instanceof Function && EXTRA_ELEMENT_HANDLING.attributeCheck(lcName, lcTag);
       if (ALLOW_DATA_ATTR && !FORBID_ATTR[lcName] && regExpTest(DATA_ATTR2, lcName))
         ;
       else if (ALLOW_ARIA_ATTR && regExpTest(ARIA_ATTR2, lcName))
         ;
-      else if (!ALLOWED_ATTR[lcName] || FORBID_ATTR[lcName]) {
+      else if (!nameIsPermitted || FORBID_ATTR[lcName]) {
         if (
           // First condition does a very basic check if a) it's basically a valid custom element tagname AND
           // b) if the tagName passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.tagNameCheck
           // and c) if the attribute name passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.attributeNameCheck
-          _isBasicCustomElement(lcTag) && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, lcTag) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(lcTag)) && (CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.attributeNameCheck, lcName) || CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.attributeNameCheck(lcName)) || // Alternative, second condition checks if it's an `is`-attribute, AND
+          _isBasicCustomElement(lcTag) && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, lcTag) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(lcTag)) && (CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.attributeNameCheck, lcName) || CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.attributeNameCheck(lcName, lcTag)) || // Alternative, second condition checks if it's an `is`-attribute, AND
           // the value passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.tagNameCheck
           lcName === "is" && CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, value2) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(value2))
         )
@@ -6603,8 +6696,9 @@
         ;
       return true;
     };
+    const RESERVED_CUSTOM_ELEMENT_NAMES = addToSet({}, ["annotation-xml", "color-profile", "font-face", "font-face-format", "font-face-name", "font-face-src", "font-face-uri", "missing-glyph"]);
     const _isBasicCustomElement = function _isBasicCustomElement2(tagName) {
-      return tagName !== "annotation-xml" && stringMatch(tagName, CUSTOM_ELEMENT2);
+      return !RESERVED_CUSTOM_ELEMENT_NAMES[stringToLowerCase(tagName)] && regExpTest(CUSTOM_ELEMENT2, tagName);
     };
     const _sanitizeAttributes = function _sanitizeAttributes2(currentNode) {
       _executeHooks(hooks.beforeSanitizeAttributes, currentNode, null);
@@ -6630,26 +6724,31 @@
           value: attrValue
         } = attr;
         const lcName = transformCaseFunc(name);
-        let value2 = name === "value" ? attrValue : stringTrim(attrValue);
+        const initValue = attrValue;
+        let value2 = name === "value" ? initValue : stringTrim(initValue);
         hookEvent.attrName = lcName;
         hookEvent.attrValue = value2;
         hookEvent.keepAttr = true;
         hookEvent.forceKeepAttr = void 0;
         _executeHooks(hooks.uponSanitizeAttribute, currentNode, hookEvent);
         value2 = hookEvent.attrValue;
-        if (SANITIZE_NAMED_PROPS && (lcName === "id" || lcName === "name")) {
+        if (SANITIZE_NAMED_PROPS && (lcName === "id" || lcName === "name") && stringIndexOf(value2, SANITIZE_NAMED_PROPS_PREFIX) !== 0) {
           _removeAttribute(name, currentNode);
           value2 = SANITIZE_NAMED_PROPS_PREFIX + value2;
         }
-        if (SAFE_FOR_XML && regExpTest(/((--!?|])>)|<\/(style|title)/i, value2)) {
+        if (SAFE_FOR_XML && regExpTest(/((--!?|])>)|<\/(style|script|title|xmp|textarea|noscript|iframe|noembed|noframes)/i, value2)) {
+          _removeAttribute(name, currentNode);
+          continue;
+        }
+        if (lcName === "attributename" && stringMatch(value2, "href")) {
           _removeAttribute(name, currentNode);
           continue;
         }
         if (hookEvent.forceKeepAttr) {
           continue;
         }
-        _removeAttribute(name, currentNode);
         if (!hookEvent.keepAttr) {
+          _removeAttribute(name, currentNode);
           continue;
         }
         if (!ALLOW_SELF_CLOSE_IN_ATTR && regExpTest(/\/>/i, value2)) {
@@ -6663,6 +6762,7 @@
         }
         const lcTag = transformCaseFunc(currentNode.nodeName);
         if (!_isValidAttribute(lcTag, lcName, value2)) {
+          _removeAttribute(name, currentNode);
           continue;
         }
         if (trustedTypesPolicy && typeof trustedTypes === "object" && typeof trustedTypes.getAttributeType === "function") {
@@ -6681,23 +6781,26 @@
             }
           }
         }
-        try {
-          if (namespaceURI) {
-            currentNode.setAttributeNS(namespaceURI, name, value2);
-          } else {
-            currentNode.setAttribute(name, value2);
+        if (value2 !== initValue) {
+          try {
+            if (namespaceURI) {
+              currentNode.setAttributeNS(namespaceURI, name, value2);
+            } else {
+              currentNode.setAttribute(name, value2);
+            }
+            if (_isClobbered(currentNode)) {
+              _forceRemove(currentNode);
+            } else {
+              arrayPop(DOMPurify.removed);
+            }
+          } catch (_2) {
+            _removeAttribute(name, currentNode);
           }
-          if (_isClobbered(currentNode)) {
-            _forceRemove(currentNode);
-          } else {
-            arrayPop(DOMPurify.removed);
-          }
-        } catch (_2) {
         }
       }
       _executeHooks(hooks.afterSanitizeAttributes, currentNode, null);
     };
-    const _sanitizeShadowDOM = function _sanitizeShadowDOM2(fragment) {
+    const _sanitizeShadowDOM2 = function _sanitizeShadowDOM(fragment) {
       let shadowNode = null;
       const shadowIterator = _createNodeIterator(fragment);
       _executeHooks(hooks.beforeSanitizeShadowDOM, fragment, null);
@@ -6722,13 +6825,9 @@
         dirty = "<!-->";
       }
       if (typeof dirty !== "string" && !_isNode(dirty)) {
-        if (typeof dirty.toString === "function") {
-          dirty = dirty.toString();
-          if (typeof dirty !== "string") {
-            throw typeErrorCreate("dirty is not a string, aborting");
-          }
-        } else {
-          throw typeErrorCreate("toString is not a function");
+        dirty = stringifyValue(dirty);
+        if (typeof dirty !== "string") {
+          throw typeErrorCreate("dirty is not a string, aborting");
         }
       }
       if (!DOMPurify.isSupported) {
@@ -6742,8 +6841,9 @@
         IN_PLACE = false;
       }
       if (IN_PLACE) {
-        if (dirty.nodeName) {
-          const tagName = transformCaseFunc(dirty.nodeName);
+        const nn = dirty.nodeName;
+        if (typeof nn === "string") {
+          const tagName = transformCaseFunc(nn);
           if (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName]) {
             throw typeErrorCreate("root node is forbidden and cannot be sanitized in-place");
           }
@@ -6776,13 +6876,21 @@
         _sanitizeElements(currentNode);
         _sanitizeAttributes(currentNode);
         if (currentNode.content instanceof DocumentFragment2) {
-          _sanitizeShadowDOM(currentNode.content);
+          _sanitizeShadowDOM2(currentNode.content);
         }
       }
       if (IN_PLACE) {
         return dirty;
       }
       if (RETURN_DOM) {
+        if (SAFE_FOR_TEMPLATES) {
+          body.normalize();
+          let html2 = body.innerHTML;
+          arrayForEach([MUSTACHE_EXPR2, ERB_EXPR2, TMPLIT_EXPR2], (expr) => {
+            html2 = stringReplace(html2, expr, " ");
+          });
+          body.innerHTML = html2;
+        }
         if (RETURN_DOM_FRAGMENT) {
           returnNode = createDocumentFragment.call(body.ownerDocument);
           while (body.firstChild) {
@@ -11149,7 +11257,7 @@
   function cleanAndMerge(defaultData, data) {
     return merge$3({}, defaultData, data);
   }
-  const utils$1 = {
+  const utils = {
     assignWithDepth: assignWithDepth$1,
     wrapLabel,
     calculateTextHeight,
@@ -11198,7 +11306,9 @@
   var COMMENT = "comm";
   var RULESET = "rule";
   var DECLARATION = "decl";
+  var MEDIA = "@media";
   var IMPORT = "@import";
+  var SUPPORTS = "@supports";
   var KEYFRAMES = "@keyframes";
   var LAYER = "@layer";
   var abs = Math.abs;
@@ -11299,7 +11409,7 @@
     return characters = "", value2;
   }
   function delimit(type2) {
-    return trim(slice$1(position$2 - 1, delimiter$1(type2 === 91 ? type2 + 2 : type2 === 40 ? type2 + 1 : type2)));
+    return trim(slice$1(position$2 - 1, delimiter(type2 === 91 ? type2 + 2 : type2 === 40 ? type2 + 1 : type2)));
   }
   function whitespace(type2) {
     while (character = peek())
@@ -11315,7 +11425,7 @@
         break;
     return slice$1(index2, caret() + (count < 6 && peek() == 32 && next$1() == 32));
   }
-  function delimiter$1(type2) {
+  function delimiter(type2) {
     while (next$1())
       switch (character) {
         case type2:
@@ -11323,11 +11433,11 @@
         case 34:
         case 39:
           if (type2 !== 34 && type2 !== 39)
-            delimiter$1(character);
+            delimiter(character);
           break;
         case 40:
           if (type2 === 41)
-            delimiter$1(type2);
+            delimiter(type2);
           break;
         case 92:
           next$1();
@@ -11503,7 +11613,16 @@
     }
     return strlen(children2 = serialize(element2.children, callback)) ? element2.return = element2.value + "{" + children2 + "}" : "";
   }
-  const version$1 = "10.9.5";
+  function middleware(collection) {
+    var length2 = sizeof(collection);
+    return function(element2, index2, children2, callback) {
+      var output = "";
+      for (var i2 = 0; i2 < length2; i2++)
+        output += collection[i2](element2, index2, children2, callback) || "";
+      return output;
+    };
+  }
+  const version$2 = "10.9.6";
   const defaultConfig$1 = Object.freeze(defaultConfig$2);
   let siteConfig = assignWithDepth$1({}, defaultConfig$1);
   let configFromInitialize;
@@ -11916,6 +12035,9 @@
     svgElem.attr("viewBox", vBox);
   };
   const themes = {};
+  function cssStyleSheetToString(cssStyleSheet) {
+    return [...cssStyleSheet.cssRules].map((rule) => rule.cssText).join("\n");
+  }
   const getStyles$f = (type2, userStyles, options2) => {
     let diagramStyles = "";
     if (type2 in themes && themes[type2]) {
@@ -14479,8 +14601,8 @@
     return { title: title2, config: config2, text: text2 };
   };
   const processDirectives = (code) => {
-    const initDirective = utils$1.detectInit(code) ?? {};
-    const wrapDirectives = utils$1.detectDirective(code, "wrap");
+    const initDirective = utils.detectInit(code) ?? {};
+    const wrapDirectives = utils.detectDirective(code, "wrap");
     if (Array.isArray(wrapDirectives)) {
       initDirective.wrap = wrapDirectives.some(({ type: type2 }) => {
       });
@@ -14539,23 +14661,23 @@
     return true;
   }
   const cssImportantStyles = (cssClass, element2, cssClasses = []) => {
-    return `
-.${cssClass} ${element2} { ${cssClasses.join(" !important; ")} !important; }`;
+    const declarationBlock = sanitizeCss(`{ ${cssClasses.join(" !important; ")} !important; }`);
+    return `.${cssClass} ${element2} ${declarationBlock}`;
   };
   const createCssStyles = (config2, classDefs = {}) => {
     var _a2;
-    let cssStyles = "";
-    if (config2.themeCSS !== void 0) {
-      cssStyles += `
-${config2.themeCSS}`;
-    }
+    const cssStyles = new CSSStyleSheet();
     if (config2.fontFamily !== void 0) {
-      cssStyles += `
-:root { --mermaid-font-family: ${config2.fontFamily}}`;
+      cssStyles.insertRule(
+        `:root { --mermaid-font-family: ${config2.fontFamily}}`,
+        cssStyles.cssRules.length
+      );
     }
     if (config2.altFontFamily !== void 0) {
-      cssStyles += `
-:root { --mermaid-alt-font-family: ${config2.altFontFamily}}`;
+      cssStyles.insertRule(
+        `:root { --mermaid-alt-font-family: ${config2.altFontFamily}}`,
+        cssStyles.cssRules.length
+      );
     }
     if (!isEmpty(classDefs)) {
       const htmlLabels = config2.htmlLabels || ((_a2 = config2.flowchart) == null ? void 0 : _a2.htmlLabels);
@@ -14566,20 +14688,76 @@ ${config2.themeCSS}`;
         const styleClassDef = classDefs[classId];
         if (!isEmpty(styleClassDef.styles)) {
           cssElements.forEach((cssElement) => {
-            cssStyles += cssImportantStyles(styleClassDef.id, cssElement, styleClassDef.styles);
+            cssStyles.insertRule(
+              cssImportantStyles(styleClassDef.id, cssElement, styleClassDef.styles),
+              cssStyles.cssRules.length
+            );
           });
         }
         if (!isEmpty(styleClassDef.textStyles)) {
-          cssStyles += cssImportantStyles(styleClassDef.id, "tspan", styleClassDef.textStyles);
+          cssStyles.insertRule(
+            cssImportantStyles(styleClassDef.id, "tspan", styleClassDef.textStyles),
+            cssStyles.cssRules.length
+          );
         }
       }
     }
-    return cssStyles;
+    let cssString = "";
+    if (config2.themeCSS !== void 0) {
+      if (typeof cssStyles.replaceSync === "function") {
+        const themeCssStyleSheet = new CSSStyleSheet();
+        themeCssStyleSheet.replaceSync(config2.themeCSS);
+        cssString = cssStyleSheetToString(themeCssStyleSheet) + "\n";
+      } else {
+        cssString += `${config2.themeCSS}
+`;
+      }
+    }
+    return cssString + cssStyleSheetToString(cssStyles);
+  };
+  const compileCSS = (namespace2, css) => {
+    return serialize(
+      compile(`${namespace2}{${css}}`),
+      middleware([
+        function addNamespace2(element2, _index, _children, _callback) {
+          if (element2.type === "rule" && Array.isArray(element2.props)) {
+            if (element2.parent && element2.parent.type === KEYFRAMES) {
+              return;
+            }
+            element2.props = element2.props.map((prop) => {
+              if (!prop.startsWith(namespace2)) {
+                return `${namespace2} ${prop}`;
+              }
+              return prop;
+            });
+          } else if (element2.type.startsWith("@")) {
+            const nestedAtRules = [
+              MEDIA,
+              SUPPORTS,
+              LAYER,
+              "@scope",
+              "@container",
+              "@starting-style"
+            ];
+            const allowedAtRules = [
+              ...nestedAtRules,
+              KEYFRAMES
+              // needed for Mermaid's animation feature
+            ];
+            if (!allowedAtRules.includes(element2.type)) {
+              log$1.warn(`Removing unsupported at-rule ${element2.type} from CSS`);
+              element2.type = COMMENT;
+            }
+          }
+        },
+        stringify
+      ])
+    );
   };
   const createUserStyles = (config2, graphType, classDefs, svgId) => {
     const userCSSstyles = createCssStyles(config2, classDefs);
     const allStyles = getStyles$g(graphType, userCSSstyles, config2.themeVariables);
-    return serialize(compile(`${svgId}{${allStyles}}`), stringify);
+    return compileCSS(svgId, allStyles);
   };
   const cleanUpSvgCode = (svgCode = "", inSandboxMode, useArrowMarkerUrls) => {
     let cleanedUpSvg = svgCode;
@@ -14633,12 +14811,12 @@ ${config2.themeCSS}`;
     if (text2.length > ((config2 == null ? void 0 : config2.maxTextSize) ?? MAX_TEXTLENGTH)) {
       text2 = MAX_TEXTLENGTH_EXCEEDED_MSG;
     }
-    const idSelector = "#" + id2;
+    const idSelector = `#${id2}`;
     const iFrameID = "i" + id2;
     const iFrameID_selector = "#" + iFrameID;
     const enclosingDivID = "d" + id2;
     const enclosingDivID_selector = "#" + enclosingDivID;
-    let root2 = d3select("body");
+    let root2 = d3select(document.body);
     const isSandboxed = config2.securityLevel === SECURITY_LVL_SANDBOX;
     const isLooseSecurityLevel = config2.securityLevel === SECURITY_LVL_LOOSE;
     const fontFamily = config2.fontFamily;
@@ -14649,7 +14827,7 @@ ${config2.themeCSS}`;
       if (isSandboxed) {
         const iframe = sandboxedIframe(d3select(svgContainingElement), iFrameID);
         root2 = d3select(iframe.nodes()[0].contentDocument.body);
-        root2.node().style.margin = 0;
+        root2.node().style.margin = "0";
       } else {
         root2 = d3select(svgContainingElement);
       }
@@ -14657,9 +14835,9 @@ ${config2.themeCSS}`;
     } else {
       removeExistingElements(document, id2, enclosingDivID, iFrameID);
       if (isSandboxed) {
-        const iframe = sandboxedIframe(d3select("body"), iFrameID);
+        const iframe = sandboxedIframe(d3select(document.body), iFrameID);
         root2 = d3select(iframe.nodes()[0].contentDocument.body);
-        root2.node().style.margin = 0;
+        root2.node().style.margin = "0";
       } else {
         root2 = d3select("body");
       }
@@ -14683,9 +14861,9 @@ ${config2.themeCSS}`;
     style1.innerHTML = rules;
     svg2.insertBefore(style1, firstChild);
     try {
-      await diag.renderer.draw(text2, id2, version$1, diag);
+      await diag.renderer.draw(text2, id2, version$2, diag);
     } catch (e) {
-      errorRenderer.draw(text2, id2, version$1);
+      errorRenderer.draw(text2, id2, version$2);
       throw e;
     }
     const svgNode2 = root2.select(`${enclosingDivID_selector} svg`);
@@ -14853,7 +15031,7 @@ ${config2.themeCSS}`;
       log$1.debug("Start On Load: " + (conf2 == null ? void 0 : conf2.startOnLoad));
       mermaidAPI.updateSiteConfig({ startOnLoad: conf2 == null ? void 0 : conf2.startOnLoad });
     }
-    const idGenerator = new utils$1.InitIDGenerator(conf2.deterministicIds, conf2.deterministicIDSeed);
+    const idGenerator = new utils.InitIDGenerator(conf2.deterministicIds, conf2.deterministicIDSeed);
     let txt;
     const errors = [];
     for (const element2 of Array.from(nodesToProcess)) {
@@ -14865,8 +15043,8 @@ ${config2.themeCSS}`;
       element2.setAttribute("data-processed", "true");
       const id2 = `mermaid-${idGenerator.next()}`;
       txt = element2.innerHTML;
-      txt = dedent(utils$1.entityDecode(txt)).trim().replace(/<br\s*\/?>/gi, "<br/>");
-      const init2 = utils$1.detectInit(txt);
+      txt = dedent(utils.entityDecode(txt)).trim().replace(/<br\s*\/?>/gi, "<br/>");
+      const init2 = utils.detectInit(txt);
       if (init2) {
         log$1.debug("Detected early reinit: ", init2);
       }
@@ -15007,65 +15185,11 @@ ${config2.themeCSS}`;
     setParseErrorHandler,
     detectType
   };
-  class SourceLocation {
-    // The + prefix indicates that these fields aren't writeable
-    // Lexer holding the input string.
-    // Start offset, zero-based inclusive.
-    // End offset, zero-based exclusive.
-    constructor(lexer, start2, end2) {
-      this.lexer = void 0;
-      this.start = void 0;
-      this.end = void 0;
-      this.lexer = lexer;
-      this.start = start2;
-      this.end = end2;
-    }
-    /**
-     * Merges two `SourceLocation`s from location providers, given they are
-     * provided in order of appearance.
-     * - Returns the first one's location if only the first is provided.
-     * - Returns a merged range of the first and the last if both are provided
-     *   and their lexers match.
-     * - Otherwise, returns null.
-     */
-    static range(first, second2) {
-      if (!second2) {
-        return first && first.loc;
-      } else if (!first || !first.loc || !second2.loc || first.loc.lexer !== second2.loc.lexer) {
-        return null;
-      } else {
-        return new SourceLocation(first.loc.lexer, first.loc.start, second2.loc.end);
-      }
-    }
-  }
-  class Token {
-    // don't expand the token
-    // used in \noexpand
-    constructor(text2, loc) {
-      this.text = void 0;
-      this.loc = void 0;
-      this.noexpand = void 0;
-      this.treatAsRelax = void 0;
-      this.text = text2;
-      this.loc = loc;
-    }
-    /**
-     * Given a pair of tokens (this and endToken), compute a `Token` encompassing
-     * the whole input range enclosed by these two.
-     */
-    range(endToken, text2) {
-      return new Token(text2, SourceLocation.range(this, endToken));
-    }
-  }
-  class ParseError {
+  class ParseError extends Error {
     // Error start position based on passed-in Token or ParseNode.
     // Length of affected text based on passed-in Token or ParseNode.
     // The underlying error message without any context added.
     constructor(message, token2) {
-      this.name = void 0;
-      this.position = void 0;
-      this.length = void 0;
-      this.rawMessage = void 0;
       var error = "KaTeX parse error: " + message;
       var start2;
       var end2;
@@ -15094,28 +15218,18 @@ ${config2.themeCSS}`;
         }
         error += left2 + underlined + right2;
       }
-      var self2 = new Error(error);
-      self2.name = "ParseError";
-      self2.__proto__ = ParseError.prototype;
-      self2.position = start2;
+      super(error);
+      this.name = "ParseError";
+      Object.setPrototypeOf(this, ParseError.prototype);
+      this.position = start2;
       if (start2 != null && end2 != null) {
-        self2.length = end2 - start2;
+        this.length = end2 - start2;
       }
-      self2.rawMessage = message;
-      return self2;
+      this.rawMessage = message;
     }
   }
-  ParseError.prototype.__proto__ = Error.prototype;
-  var contains = function contains2(list2, elem) {
-    return list2.indexOf(elem) !== -1;
-  };
-  var deflt = function deflt2(setting, defaultIfUndefined) {
-    return setting === void 0 ? defaultIfUndefined : setting;
-  };
   var uppercase = /([A-Z])/g;
-  var hyphenate = function hyphenate2(str2) {
-    return str2.replace(uppercase, "-$1").toLowerCase();
-  };
+  var hyphenate = (str2) => str2.replace(uppercase, "-$1").toLowerCase();
   var ESCAPE_LOOKUP = {
     "&": "&amp;",
     ">": "&gt;",
@@ -15124,39 +15238,29 @@ ${config2.themeCSS}`;
     "'": "&#x27;"
   };
   var ESCAPE_REGEX = /[&><"']/g;
-  function escape$1(text2) {
-    return String(text2).replace(ESCAPE_REGEX, (match) => ESCAPE_LOOKUP[match]);
-  }
-  var getBaseElem = function getBaseElem2(group) {
+  var escape$1 = (text2) => String(text2).replace(ESCAPE_REGEX, (match) => ESCAPE_LOOKUP[match]);
+  var getBaseElem = (group) => {
     if (group.type === "ordgroup") {
       if (group.body.length === 1) {
-        return getBaseElem2(group.body[0]);
+        return getBaseElem(group.body[0]);
       } else {
         return group;
       }
     } else if (group.type === "color") {
       if (group.body.length === 1) {
-        return getBaseElem2(group.body[0]);
+        return getBaseElem(group.body[0]);
       } else {
         return group;
       }
     } else if (group.type === "font") {
-      return getBaseElem2(group.body);
+      return getBaseElem(group.body);
     } else {
       return group;
     }
   };
-  var isCharacterBox = function isCharacterBox2(group) {
-    var baseElem = getBaseElem(group);
-    return baseElem.type === "mathord" || baseElem.type === "textord" || baseElem.type === "atom";
-  };
-  var assert = function assert2(value2) {
-    if (!value2) {
-      throw new Error("Expected non-null, but got " + String(value2));
-    }
-    return value2;
-  };
-  var protocolFromUrl = function protocolFromUrl2(url) {
+  var characterNodesTypes = /* @__PURE__ */ new Set(["mathord", "textord", "atom"]);
+  var isCharacterBox = (group) => characterNodesTypes.has(getBaseElem(group).type);
+  var protocolFromUrl = (url) => {
     var protocol = /^[\x00-\x20]*([^\\/#?]*?)(:|&#0*58|&#x0*3a|&colon)/i.exec(url);
     if (!protocol) {
       return "_relative";
@@ -15168,15 +15272,6 @@ ${config2.themeCSS}`;
       return null;
     }
     return protocol[1].toLowerCase();
-  };
-  var utils = {
-    contains,
-    deflt,
-    escape: escape$1,
-    hyphenate,
-    getBaseElem,
-    isCharacterBox,
-    protocolFromUrl
   };
   var SETTINGS_SCHEMA = {
     displayMode: {
@@ -15269,7 +15364,7 @@ ${config2.themeCSS}`;
     }
   };
   function getDefaultValue(schema2) {
-    if (schema2.default) {
+    if ("default" in schema2) {
       return schema2.default;
     }
     var type2 = schema2.type;
@@ -15290,26 +15385,14 @@ ${config2.themeCSS}`;
   }
   class Settings {
     constructor(options2) {
-      this.displayMode = void 0;
-      this.output = void 0;
-      this.leqno = void 0;
-      this.fleqn = void 0;
-      this.throwOnError = void 0;
-      this.errorColor = void 0;
-      this.macros = void 0;
-      this.minRuleThickness = void 0;
-      this.colorIsTextColor = void 0;
-      this.strict = void 0;
-      this.trust = void 0;
-      this.maxSize = void 0;
-      this.maxExpand = void 0;
-      this.globalGroup = void 0;
+      if (options2 === void 0) {
+        options2 = {};
+      }
       options2 = options2 || {};
-      for (var prop in SETTINGS_SCHEMA) {
-        if (SETTINGS_SCHEMA.hasOwnProperty(prop)) {
-          var schema2 = SETTINGS_SCHEMA[prop];
-          this[prop] = options2[prop] !== void 0 ? schema2.processor ? schema2.processor(options2[prop]) : options2[prop] : getDefaultValue(schema2);
-        }
+      for (var prop of Object.keys(SETTINGS_SCHEMA)) {
+        var schema2 = SETTINGS_SCHEMA[prop];
+        var optionValue = options2[prop];
+        this[prop] = optionValue !== void 0 ? schema2.processor ? schema2.processor(optionValue) : optionValue : getDefaultValue(schema2);
       }
     }
     /**
@@ -15369,8 +15452,8 @@ ${config2.themeCSS}`;
      * get added by this function (changing the specified object).
      */
     isTrusted(context) {
-      if (context.url && !context.protocol) {
-        var protocol = utils.protocolFromUrl(context.url);
+      if ("url" in context && context.url && !context.protocol) {
+        var protocol = protocolFromUrl(context.url);
         if (protocol == null) {
           return false;
         }
@@ -15382,9 +15465,6 @@ ${config2.themeCSS}`;
   }
   class Style {
     constructor(id2, size2, cramped) {
-      this.id = void 0;
-      this.size = void 0;
-      this.cramped = void 0;
       this.id = id2;
       this.size = size2;
       this.cramped = cramped;
@@ -15537,6 +15617,7 @@ ${config2.themeCSS}`;
     }
     return false;
   }
+  var doubleBrushStroke = (svgPath) => svgPath + " " + svgPath;
   var hLinePad = 80;
   var sqrtMain = function sqrtMain2(extraVinculum, hLinePad2) {
     return "M95," + (622 + extraVinculum + hLinePad2) + "\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl" + extraVinculum / 2.075 + " -" + extraVinculum + "\nc5.3,-9.3,12,-14,20,-14\nH400000v" + (40 + extraVinculum) + "H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM" + (834 + extraVinculum) + " " + hLinePad2 + "h400000v" + (40 + extraVinculum) + "h-400000z";
@@ -15588,23 +15669,23 @@ ${config2.themeCSS}`;
   var innerPath = function innerPath2(name, height) {
     switch (name) {
       case "⎜":
-        return "M291 0 H417 V" + height + " H291z M291 0 H417 V" + height + " H291z";
+        return doubleBrushStroke("M291 0 H417 V" + height + " H291z");
       case "∣":
-        return "M145 0 H188 V" + height + " H145z M145 0 H188 V" + height + " H145z";
+        return doubleBrushStroke("M145 0 H188 V" + height + " H145z");
       case "∥":
-        return "M145 0 H188 V" + height + " H145z M145 0 H188 V" + height + " H145z" + ("M367 0 H410 V" + height + " H367z M367 0 H410 V" + height + " H367z");
+        return doubleBrushStroke("M145 0 H188 V" + height + " H145z") + doubleBrushStroke("M367 0 H410 V" + height + " H367z");
       case "⎟":
-        return "M457 0 H583 V" + height + " H457z M457 0 H583 V" + height + " H457z";
+        return doubleBrushStroke("M457 0 H583 V" + height + " H457z");
       case "⎢":
-        return "M319 0 H403 V" + height + " H319z M319 0 H403 V" + height + " H319z";
+        return doubleBrushStroke("M319 0 H403 V" + height + " H319z");
       case "⎥":
-        return "M263 0 H347 V" + height + " H263z M263 0 H347 V" + height + " H263z";
+        return doubleBrushStroke("M263 0 H347 V" + height + " H263z");
       case "⎪":
-        return "M384 0 H504 V" + height + " H384z M384 0 H504 V" + height + " H384z";
+        return doubleBrushStroke("M384 0 H504 V" + height + " H384z");
       case "⏐":
-        return "M312 0 H355 V" + height + " H312z M312 0 H355 V" + height + " H312z";
+        return doubleBrushStroke("M312 0 H355 V" + height + " H312z");
       case "‖":
-        return "M257 0 H300 V" + height + " H257z M257 0 H300 V" + height + " H257z" + ("M478 0 H521 V" + height + " H478z M478 0 H521 V" + height + " H478z");
+        return doubleBrushStroke("M257 0 H300 V" + height + " H257z") + doubleBrushStroke("M478 0 H521 V" + height + " H478z");
       default:
         return "";
     }
@@ -15629,11 +15710,13 @@ ${config2.themeCSS}`;
     leftharpoondownplus: "M7 435c-4 4-6.3 8.7-7 14 0 5.3.7 9 2 11s5.3 5.3 12\n 10c90.7 54 156 130 196 228 3.3 10.7 6.3 16.3 9 17 2 .7 5 1 9 1h5c10.7 0 16.7\n-2 18-6 2-2.7 1-9.7-3-21-32-87.3-82.7-157.7-152-211l-3-3h399907v-40H7zm93 0\nv40h399900v-40zM0 241v40h399900v-40zm0 0v40h399900v-40z",
     // hook is from glyph U+21A9 in font KaTeX Main
     lefthook: "M400000 281 H103s-33-11.2-61-33.5S0 197.3 0 164s14.2-61.2 42.5\n-83.5C70.8 58.2 104 47 142 47 c16.7 0 25 6.7 25 20 0 12-8.7 18.7-26 20-40 3.3\n-68.7 15.7-86 37-10 12-15 25.3-15 40 0 22.7 9.8 40.7 29.5 54 19.7 13.3 43.5 21\n 71.5 23h399859zM103 281v-40h399897v40z",
-    leftlinesegment: "M40 281 V428 H0 V94 H40 V241 H400000 v40z\nM40 281 V428 H0 V94 H40 V241 H400000 v40z",
-    leftmapsto: "M40 281 V448H0V74H40V241H400000v40z\nM40 281 V448H0V74H40V241H400000v40z",
+    leftlinesegment: doubleBrushStroke("M40 281 V428 H0 V94 H40 V241 H400000 v40z"),
+    leftbracketunder: doubleBrushStroke("M0 0 h120 V290 H399995 v120 H0z"),
+    leftbracketover: doubleBrushStroke("M0 440 h120 V150 H399995 v-120 H0z"),
+    leftmapsto: doubleBrushStroke("M40 281 V448H0V74H40V241H400000v40z"),
     // tofrom is from glyph U+21C4 in font KaTeX AMS Regular
     leftToFrom: "M0 147h400000v40H0zm0 214c68 40 115.7 95.7 143 167h22c15.3 0 23\n-.3 23-1 0-1.3-5.3-13.7-16-37-18-35.3-41.3-69-70-101l-7-8h399905v-40H95l7-8\nc28.7-32 52-65.7 70-101 10.7-23.3 16-35.7 16-37 0-.7-7.7-1-23-1h-22C115.7 265.3\n 68 321 0 361zm0-174v-40h399900v40zm100 154v40h399900v-40z",
-    longequal: "M0 50 h400000 v40H0z m0 194h40000v40H0z\nM0 50 h400000 v40H0z m0 194h40000v40H0z",
+    longequal: doubleBrushStroke("M0 50 h400000 v40H0z m0 194h40000v40H0z"),
     midbrace: "M200428 334\nc-100.7-8.3-195.3-44-280-108-55.3-42-101.7-93-139-153l-9-14c-2.7 4-5.7 8.7-9 14\n-53.3 86.7-123.7 153-211 199-66.7 36-137.3 56.3-212 62H0V214h199568c178.3-11.7\n 311.7-78.3 403-201 6-8 9.7-12 11-12 .7-.7 6.7-1 18-1s17.3.3 18 1c1.3 0 5 4 11\n 12 44.7 59.3 101.3 106.3 170 141s145.3 54.3 229 60h199572v120z",
     midbraceunder: "M199572 214\nc100.7 8.3 195.3 44 280 108 55.3 42 101.7 93 139 153l9 14c2.7-4 5.7-8.7 9-14\n 53.3-86.7 123.7-153 211-199 66.7-36 137.3-56.3 212-62h199568v120H200432c-178.3\n 11.7-311.7 78.3-403 201-6 8-9.7 12-11 12-.7.7-6.7 1-18 1s-17.3-.3-18-1c-1.3 0\n-5-4-11-12-44.7-59.3-101.3-106.3-170-141s-145.3-54.3-229-60H0V214z",
     oiintSize1: "M512.6 71.6c272.6 0 320.3 106.8 320.3 178.2 0 70.8-47.7 177.6\n-320.3 177.6S193.1 320.6 193.1 249.8c0-71.4 46.9-178.2 319.5-178.2z\nm368.1 178.2c0-86.4-60.9-215.4-368.1-215.4-306.4 0-367.3 129-367.3 215.4 0 85.8\n60.9 214.8 367.3 214.8 307.2 0 368.1-129 368.1-214.8z",
@@ -15650,7 +15733,9 @@ ${config2.themeCSS}`;
     rightharpoondown: "M399747 511c0 7.3 6.7 11 20 11 8 0 13-.8 15-2.5s4.7-6.8\n 8-15.5c40-94 99.3-166.3 178-217 13.3-8 20.3-12.3 21-13 5.3-3.3 8.5-5.8 9.5\n-7.5 1-1.7 1.5-5.2 1.5-10.5s-2.3-10.3-7-15H0v40h399908c-34 25.3-64.7 57-92 95\n-27.3 38-48.7 77.7-64 119-3.3 8.7-5 14-5 16zM0 241v40h399900v-40z",
     rightharpoondownplus: "M399747 705c0 7.3 6.7 11 20 11 8 0 13-.8\n 15-2.5s4.7-6.8 8-15.5c40-94 99.3-166.3 178-217 13.3-8 20.3-12.3 21-13 5.3-3.3\n 8.5-5.8 9.5-7.5 1-1.7 1.5-5.2 1.5-10.5s-2.3-10.3-7-15H0v40h399908c-34 25.3\n-64.7 57-92 95-27.3 38-48.7 77.7-64 119-3.3 8.7-5 14-5 16zM0 435v40h399900v-40z\nm0-194v40h400000v-40zm0 0v40h400000v-40z",
     righthook: "M399859 241c-764 0 0 0 0 0 40-3.3 68.7-15.7 86-37 10-12 15-25.3\n 15-40 0-22.7-9.8-40.7-29.5-54-19.7-13.3-43.5-21-71.5-23-17.3-1.3-26-8-26-20 0\n-13.3 8.7-20 26-20 38 0 71 11.2 99 33.5 0 0 7 5.6 21 16.7 14 11.2 21 33.5 21\n 66.8s-14 61.2-42 83.5c-28 22.3-61 33.5-99 33.5L0 241z M0 281v-40h399859v40z",
-    rightlinesegment: "M399960 241 V94 h40 V428 h-40 V281 H0 v-40z\nM399960 241 V94 h40 V428 h-40 V281 H0 v-40z",
+    rightlinesegment: doubleBrushStroke("M399960 241 V94 h40 V428 h-40 V281 H0 v-40z"),
+    rightbracketunder: doubleBrushStroke("M399995 0 h-120 V290 H0 v120 H400000z"),
+    rightbracketover: doubleBrushStroke("M399995 440 h-120 V150 H0 v-120 H399995z"),
     rightToFrom: "M400000 167c-70.7-42-118-97.7-142-167h-23c-15.3 0-23 .3-23\n 1 0 1.3 5.3 13.7 16 37 18 35.3 41.3 69 70 101l7 8H0v40h399905l-7 8c-28.7 32\n-52 65.7-70 101-10.7 23.3-16 35.7-16 37 0 .7 7.7 1 23 1h23c24-69.3 71.3-125 142\n-167z M100 147v40h399900v-40zM0 341v40h399900v-40z",
     // twoheadleftarrow is from glyph U+219E in font KaTeX AMS Regular
     twoheadleftarrow: "M0 167c68 40\n 115.7 95.7 143 167h22c15.3 0 23-.3 23-1 0-1.3-5.3-13.7-16-37-18-35.3-41.3-69\n-70-101l-7-8h125l9 7c50.7 39.3 85 86 103 140h46c0-4.7-6.3-18.7-19-42-18-35.3\n-40-67.3-66-96l-9-9h399716v-40H284l9-9c26-28.7 48-60.7 66-96 12.7-23.333 19\n-37.333 19-42h-46c-18 54-52.3 100.7-103 140l-9 7H95l7-8c28.7-32 52-65.7 70-101\n 10.7-23.333 16-35.7 16-37 0-.7-7.7-1-23-1h-22C115.7 71.3 68 127 0 167z",
@@ -15714,15 +15799,8 @@ ${config2.themeCSS}`;
     }
   };
   class DocumentFragment {
-    // HtmlDomNode
     // Never used; needed for satisfying interface.
     constructor(children2) {
-      this.children = void 0;
-      this.classes = void 0;
-      this.height = void 0;
-      this.depth = void 0;
-      this.maxFontSize = void 0;
-      this.style = void 0;
       this.children = children2;
       this.classes = [];
       this.height = 0;
@@ -15731,7 +15809,7 @@ ${config2.themeCSS}`;
       this.style = {};
     }
     hasClass(className) {
-      return utils.contains(this.classes, className);
+      return this.classes.includes(className);
     }
     /** Convert the fragment into a node. */
     toNode() {
@@ -15758,6 +15836,390 @@ ${config2.themeCSS}`;
       return this.children.map(toText).join("");
     }
   }
+  var ptPerUnit = {
+    // https://en.wikibooks.org/wiki/LaTeX/Lengths and
+    // https://tex.stackexchange.com/a/8263
+    "pt": 1,
+    // TeX point
+    "mm": 7227 / 2540,
+    // millimeter
+    "cm": 7227 / 254,
+    // centimeter
+    "in": 72.27,
+    // inch
+    "bp": 803 / 800,
+    // big (PostScript) points
+    "pc": 12,
+    // pica
+    "dd": 1238 / 1157,
+    // didot
+    "cc": 14856 / 1157,
+    // cicero (12 didot)
+    "nd": 685 / 642,
+    // new didot
+    "nc": 1370 / 107,
+    // new cicero (12 new didot)
+    "sp": 1 / 65536,
+    // scaled point (TeX's internal smallest unit)
+    // https://tex.stackexchange.com/a/41371
+    "px": 803 / 800
+    // \pdfpxdimen defaults to 1 bp in pdfTeX and LuaTeX
+  };
+  var relativeUnit = {
+    "ex": true,
+    "em": true,
+    "mu": true
+  };
+  var validUnit = function validUnit2(unit2) {
+    if (typeof unit2 !== "string") {
+      unit2 = unit2.unit;
+    }
+    return unit2 in ptPerUnit || unit2 in relativeUnit || unit2 === "ex";
+  };
+  var calculateSize = function calculateSize2(sizeValue, options2) {
+    var scale;
+    if (sizeValue.unit in ptPerUnit) {
+      scale = ptPerUnit[sizeValue.unit] / options2.fontMetrics().ptPerEm / options2.sizeMultiplier;
+    } else if (sizeValue.unit === "mu") {
+      scale = options2.fontMetrics().cssEmPerMu;
+    } else {
+      var unitOptions;
+      if (options2.style.isTight()) {
+        unitOptions = options2.havingStyle(options2.style.text());
+      } else {
+        unitOptions = options2;
+      }
+      if (sizeValue.unit === "ex") {
+        scale = unitOptions.fontMetrics().xHeight;
+      } else if (sizeValue.unit === "em") {
+        scale = unitOptions.fontMetrics().quad;
+      } else {
+        throw new ParseError("Invalid unit: '" + sizeValue.unit + "'");
+      }
+      if (unitOptions !== options2) {
+        scale *= unitOptions.sizeMultiplier / options2.sizeMultiplier;
+      }
+    }
+    return Math.min(sizeValue.number * scale, options2.maxSize);
+  };
+  var makeEm = function makeEm2(n) {
+    return +n.toFixed(4) + "em";
+  };
+  var createClass = function createClass2(classes2) {
+    return classes2.filter((cls) => cls).join(" ");
+  };
+  var initNode = function initNode2(classes2, options2, style) {
+    this.classes = classes2 || [];
+    this.attributes = {};
+    this.height = 0;
+    this.depth = 0;
+    this.maxFontSize = 0;
+    this.style = style || {};
+    if (options2) {
+      if (options2.style.isTight()) {
+        this.classes.push("mtight");
+      }
+      var color2 = options2.getColor();
+      if (color2) {
+        this.style.color = color2;
+      }
+    }
+  };
+  var toNode = function toNode2(tagName) {
+    var node2 = document.createElement(tagName);
+    node2.className = createClass(this.classes);
+    for (var key of Object.keys(this.style)) {
+      node2.style[key] = this.style[key];
+    }
+    for (var attr of Object.keys(this.attributes)) {
+      node2.setAttribute(attr, this.attributes[attr]);
+    }
+    for (var i2 = 0; i2 < this.children.length; i2++) {
+      node2.appendChild(this.children[i2].toNode());
+    }
+    return node2;
+  };
+  var invalidAttributeNameRegex = /[\s"'>/=\x00-\x1f]/;
+  var toMarkup = function toMarkup2(tagName) {
+    var markup = "<" + tagName;
+    if (this.classes.length) {
+      markup += ' class="' + escape$1(createClass(this.classes)) + '"';
+    }
+    var styles2 = "";
+    for (var key of Object.keys(this.style)) {
+      styles2 += hyphenate(key) + ":" + this.style[key] + ";";
+    }
+    if (styles2) {
+      markup += ' style="' + escape$1(styles2) + '"';
+    }
+    for (var attr of Object.keys(this.attributes)) {
+      if (invalidAttributeNameRegex.test(attr)) {
+        throw new ParseError("Invalid attribute name '" + attr + "'");
+      }
+      markup += " " + attr + '="' + escape$1(this.attributes[attr]) + '"';
+    }
+    markup += ">";
+    for (var i2 = 0; i2 < this.children.length; i2++) {
+      markup += this.children[i2].toMarkup();
+    }
+    markup += "</" + tagName + ">";
+    return markup;
+  };
+  class Span {
+    constructor(classes2, children2, options2, style) {
+      initNode.call(this, classes2, options2, style);
+      this.children = children2 || [];
+    }
+    /**
+     * Sets an arbitrary attribute on the span. Warning: use this wisely. Not
+     * all browsers support attributes the same, and having too many custom
+     * attributes is probably bad.
+     */
+    setAttribute(attribute, value2) {
+      this.attributes[attribute] = value2;
+    }
+    hasClass(className) {
+      return this.classes.includes(className);
+    }
+    toNode() {
+      return toNode.call(this, "span");
+    }
+    toMarkup() {
+      return toMarkup.call(this, "span");
+    }
+  }
+  class Anchor {
+    constructor(href, classes2, children2, options2) {
+      initNode.call(this, classes2, options2);
+      this.children = children2 || [];
+      this.setAttribute("href", href);
+    }
+    setAttribute(attribute, value2) {
+      this.attributes[attribute] = value2;
+    }
+    hasClass(className) {
+      return this.classes.includes(className);
+    }
+    toNode() {
+      return toNode.call(this, "a");
+    }
+    toMarkup() {
+      return toMarkup.call(this, "a");
+    }
+  }
+  class Img {
+    constructor(src, alt, style) {
+      this.alt = alt;
+      this.src = src;
+      this.classes = ["mord"];
+      this.height = 0;
+      this.depth = 0;
+      this.maxFontSize = 0;
+      this.style = style;
+    }
+    hasClass(className) {
+      return this.classes.includes(className);
+    }
+    toNode() {
+      var node2 = document.createElement("img");
+      node2.src = this.src;
+      node2.alt = this.alt;
+      node2.className = "mord";
+      for (var key of Object.keys(this.style)) {
+        node2.style[key] = this.style[key];
+      }
+      return node2;
+    }
+    toMarkup() {
+      var markup = '<img src="' + escape$1(this.src) + '"' + (' alt="' + escape$1(this.alt) + '"');
+      var styles2 = "";
+      for (var key of Object.keys(this.style)) {
+        styles2 += hyphenate(key) + ":" + this.style[key] + ";";
+      }
+      if (styles2) {
+        markup += ' style="' + escape$1(styles2) + '"';
+      }
+      markup += "'/>";
+      return markup;
+    }
+  }
+  var iCombinations = {
+    "î": "ı̂",
+    "ï": "ı̈",
+    "í": "ı́",
+    // 'ī': '\u0131\u0304', // enable when we add Extended Latin
+    "ì": "ı̀"
+  };
+  class SymbolNode {
+    constructor(text2, height, depth, italic, skew, width2, classes2, style) {
+      this.text = text2;
+      this.height = height || 0;
+      this.depth = depth || 0;
+      this.italic = italic || 0;
+      this.skew = skew || 0;
+      this.width = width2 || 0;
+      this.classes = classes2 || [];
+      this.style = style || {};
+      this.maxFontSize = 0;
+      var script = scriptFromCodepoint(this.text.charCodeAt(0));
+      if (script) {
+        this.classes.push(script + "_fallback");
+      }
+      if (/[îïíì]/.test(this.text)) {
+        this.text = iCombinations[this.text];
+      }
+    }
+    hasClass(className) {
+      return this.classes.includes(className);
+    }
+    /**
+     * Creates a text node or span from a symbol node. Note that a span is only
+     * created if it is needed.
+     */
+    toNode() {
+      var node2 = document.createTextNode(this.text);
+      var span = null;
+      if (this.italic > 0) {
+        span = document.createElement("span");
+        span.style.marginRight = makeEm(this.italic);
+      }
+      if (this.classes.length > 0) {
+        span = span || document.createElement("span");
+        span.className = createClass(this.classes);
+      }
+      for (var key of Object.keys(this.style)) {
+        span = span || document.createElement("span");
+        span.style[key] = this.style[key];
+      }
+      if (span) {
+        span.appendChild(node2);
+        return span;
+      } else {
+        return node2;
+      }
+    }
+    /**
+     * Creates markup for a symbol node.
+     */
+    toMarkup() {
+      var needsSpan = false;
+      var markup = "<span";
+      if (this.classes.length) {
+        needsSpan = true;
+        markup += ' class="';
+        markup += escape$1(createClass(this.classes));
+        markup += '"';
+      }
+      var styles2 = "";
+      if (this.italic > 0) {
+        styles2 += "margin-right:" + makeEm(this.italic) + ";";
+      }
+      for (var key of Object.keys(this.style)) {
+        styles2 += hyphenate(key) + ":" + this.style[key] + ";";
+      }
+      if (styles2) {
+        needsSpan = true;
+        markup += ' style="' + escape$1(styles2) + '"';
+      }
+      var escaped = escape$1(this.text);
+      if (needsSpan) {
+        markup += ">";
+        markup += escaped;
+        markup += "</span>";
+        return markup;
+      } else {
+        return escaped;
+      }
+    }
+  }
+  class SvgNode {
+    constructor(children2, attributes) {
+      this.children = children2 || [];
+      this.attributes = attributes || {};
+    }
+    toNode() {
+      var svgNS = "http://www.w3.org/2000/svg";
+      var node2 = document.createElementNS(svgNS, "svg");
+      for (var attr of Object.keys(this.attributes)) {
+        node2.setAttribute(attr, this.attributes[attr]);
+      }
+      for (var i2 = 0; i2 < this.children.length; i2++) {
+        node2.appendChild(this.children[i2].toNode());
+      }
+      return node2;
+    }
+    toMarkup() {
+      var markup = '<svg xmlns="http://www.w3.org/2000/svg"';
+      for (var attr of Object.keys(this.attributes)) {
+        markup += " " + attr + '="' + escape$1(this.attributes[attr]) + '"';
+      }
+      markup += ">";
+      for (var i2 = 0; i2 < this.children.length; i2++) {
+        markup += this.children[i2].toMarkup();
+      }
+      markup += "</svg>";
+      return markup;
+    }
+  }
+  class PathNode {
+    constructor(pathName, alternate) {
+      this.pathName = pathName;
+      this.alternate = alternate;
+    }
+    toNode() {
+      var svgNS = "http://www.w3.org/2000/svg";
+      var node2 = document.createElementNS(svgNS, "path");
+      if (this.alternate) {
+        node2.setAttribute("d", this.alternate);
+      } else {
+        node2.setAttribute("d", path$1[this.pathName]);
+      }
+      return node2;
+    }
+    toMarkup() {
+      if (this.alternate) {
+        return '<path d="' + escape$1(this.alternate) + '"/>';
+      } else {
+        return '<path d="' + escape$1(path$1[this.pathName]) + '"/>';
+      }
+    }
+  }
+  class LineNode {
+    constructor(attributes) {
+      this.attributes = attributes || {};
+    }
+    toNode() {
+      var svgNS = "http://www.w3.org/2000/svg";
+      var node2 = document.createElementNS(svgNS, "line");
+      for (var attr of Object.keys(this.attributes)) {
+        node2.setAttribute(attr, this.attributes[attr]);
+      }
+      return node2;
+    }
+    toMarkup() {
+      var markup = "<line";
+      for (var attr of Object.keys(this.attributes)) {
+        markup += " " + attr + '="' + escape$1(this.attributes[attr]) + '"';
+      }
+      markup += "/>";
+      return markup;
+    }
+  }
+  function assertSymbolDomNode(group) {
+    if (group instanceof SymbolNode) {
+      return group;
+    } else {
+      throw new Error("Expected symbolNode but got " + String(group) + ".");
+    }
+  }
+  function assertSpan(group) {
+    if (group instanceof Span) {
+      return group;
+    } else {
+      throw new Error("Expected span<HtmlDomNode> but got " + String(group) + ".");
+    }
+  }
+  var hasHtmlDomChildren = (node2) => node2 instanceof Span || node2 instanceof Anchor || node2 instanceof DocumentFragment;
   var fontMetricsData = {
     "AMS-Regular": {
       "32": [0, 0, 0, 0, 0.25],
@@ -18040,717 +18502,6 @@ ${config2.themeCSS}`;
     }
     return fontMetricsBySizeIndex[sizeIndex];
   }
-  var sizeStyleMap = [
-    // Each element contains [textsize, scriptsize, scriptscriptsize].
-    // The size mappings are taken from TeX with \normalsize=10pt.
-    [1, 1, 1],
-    // size1: [5, 5, 5]              \tiny
-    [2, 1, 1],
-    // size2: [6, 5, 5]
-    [3, 1, 1],
-    // size3: [7, 5, 5]              \scriptsize
-    [4, 2, 1],
-    // size4: [8, 6, 5]              \footnotesize
-    [5, 2, 1],
-    // size5: [9, 6, 5]              \small
-    [6, 3, 1],
-    // size6: [10, 7, 5]             \normalsize
-    [7, 4, 2],
-    // size7: [12, 8, 6]             \large
-    [8, 6, 3],
-    // size8: [14.4, 10, 7]          \Large
-    [9, 7, 6],
-    // size9: [17.28, 12, 10]        \LARGE
-    [10, 8, 7],
-    // size10: [20.74, 14.4, 12]     \huge
-    [11, 10, 9]
-    // size11: [24.88, 20.74, 17.28] \HUGE
-  ];
-  var sizeMultipliers = [
-    // fontMetrics.js:getGlobalMetrics also uses size indexes, so if
-    // you change size indexes, change that function.
-    0.5,
-    0.6,
-    0.7,
-    0.8,
-    0.9,
-    1,
-    1.2,
-    1.44,
-    1.728,
-    2.074,
-    2.488
-  ];
-  var sizeAtStyle = function sizeAtStyle2(size2, style) {
-    return style.size < 2 ? size2 : sizeStyleMap[size2 - 1][style.size - 1];
-  };
-  class Options {
-    // A font family applies to a group of fonts (i.e. SansSerif), while a font
-    // represents a specific font (i.e. SansSerif Bold).
-    // See: https://tex.stackexchange.com/questions/22350/difference-between-textrm-and-mathrm
-    /**
-     * The base size index.
-     */
-    constructor(data) {
-      this.style = void 0;
-      this.color = void 0;
-      this.size = void 0;
-      this.textSize = void 0;
-      this.phantom = void 0;
-      this.font = void 0;
-      this.fontFamily = void 0;
-      this.fontWeight = void 0;
-      this.fontShape = void 0;
-      this.sizeMultiplier = void 0;
-      this.maxSize = void 0;
-      this.minRuleThickness = void 0;
-      this._fontMetrics = void 0;
-      this.style = data.style;
-      this.color = data.color;
-      this.size = data.size || Options.BASESIZE;
-      this.textSize = data.textSize || this.size;
-      this.phantom = !!data.phantom;
-      this.font = data.font || "";
-      this.fontFamily = data.fontFamily || "";
-      this.fontWeight = data.fontWeight || "";
-      this.fontShape = data.fontShape || "";
-      this.sizeMultiplier = sizeMultipliers[this.size - 1];
-      this.maxSize = data.maxSize;
-      this.minRuleThickness = data.minRuleThickness;
-      this._fontMetrics = void 0;
-    }
-    /**
-     * Returns a new options object with the same properties as "this".  Properties
-     * from "extension" will be copied to the new options object.
-     */
-    extend(extension2) {
-      var data = {
-        style: this.style,
-        size: this.size,
-        textSize: this.textSize,
-        color: this.color,
-        phantom: this.phantom,
-        font: this.font,
-        fontFamily: this.fontFamily,
-        fontWeight: this.fontWeight,
-        fontShape: this.fontShape,
-        maxSize: this.maxSize,
-        minRuleThickness: this.minRuleThickness
-      };
-      for (var key in extension2) {
-        if (extension2.hasOwnProperty(key)) {
-          data[key] = extension2[key];
-        }
-      }
-      return new Options(data);
-    }
-    /**
-     * Return an options object with the given style. If `this.style === style`,
-     * returns `this`.
-     */
-    havingStyle(style) {
-      if (this.style === style) {
-        return this;
-      } else {
-        return this.extend({
-          style,
-          size: sizeAtStyle(this.textSize, style)
-        });
-      }
-    }
-    /**
-     * Return an options object with a cramped version of the current style. If
-     * the current style is cramped, returns `this`.
-     */
-    havingCrampedStyle() {
-      return this.havingStyle(this.style.cramp());
-    }
-    /**
-     * Return an options object with the given size and in at least `\textstyle`.
-     * Returns `this` if appropriate.
-     */
-    havingSize(size2) {
-      if (this.size === size2 && this.textSize === size2) {
-        return this;
-      } else {
-        return this.extend({
-          style: this.style.text(),
-          size: size2,
-          textSize: size2,
-          sizeMultiplier: sizeMultipliers[size2 - 1]
-        });
-      }
-    }
-    /**
-     * Like `this.havingSize(BASESIZE).havingStyle(style)`. If `style` is omitted,
-     * changes to at least `\textstyle`.
-     */
-    havingBaseStyle(style) {
-      style = style || this.style.text();
-      var wantSize = sizeAtStyle(Options.BASESIZE, style);
-      if (this.size === wantSize && this.textSize === Options.BASESIZE && this.style === style) {
-        return this;
-      } else {
-        return this.extend({
-          style,
-          size: wantSize
-        });
-      }
-    }
-    /**
-     * Remove the effect of sizing changes such as \Huge.
-     * Keep the effect of the current style, such as \scriptstyle.
-     */
-    havingBaseSizing() {
-      var size2;
-      switch (this.style.id) {
-        case 4:
-        case 5:
-          size2 = 3;
-          break;
-        case 6:
-        case 7:
-          size2 = 1;
-          break;
-        default:
-          size2 = 6;
-      }
-      return this.extend({
-        style: this.style.text(),
-        size: size2
-      });
-    }
-    /**
-     * Create a new options object with the given color.
-     */
-    withColor(color2) {
-      return this.extend({
-        color: color2
-      });
-    }
-    /**
-     * Create a new options object with "phantom" set to true.
-     */
-    withPhantom() {
-      return this.extend({
-        phantom: true
-      });
-    }
-    /**
-     * Creates a new options object with the given math font or old text font.
-     * @type {[type]}
-     */
-    withFont(font) {
-      return this.extend({
-        font
-      });
-    }
-    /**
-     * Create a new options objects with the given fontFamily.
-     */
-    withTextFontFamily(fontFamily) {
-      return this.extend({
-        fontFamily,
-        font: ""
-      });
-    }
-    /**
-     * Creates a new options object with the given font weight
-     */
-    withTextFontWeight(fontWeight) {
-      return this.extend({
-        fontWeight,
-        font: ""
-      });
-    }
-    /**
-     * Creates a new options object with the given font weight
-     */
-    withTextFontShape(fontShape) {
-      return this.extend({
-        fontShape,
-        font: ""
-      });
-    }
-    /**
-     * Return the CSS sizing classes required to switch from enclosing options
-     * `oldOptions` to `this`. Returns an array of classes.
-     */
-    sizingClasses(oldOptions) {
-      if (oldOptions.size !== this.size) {
-        return ["sizing", "reset-size" + oldOptions.size, "size" + this.size];
-      } else {
-        return [];
-      }
-    }
-    /**
-     * Return the CSS sizing classes required to switch to the base size. Like
-     * `this.havingSize(BASESIZE).sizingClasses(this)`.
-     */
-    baseSizingClasses() {
-      if (this.size !== Options.BASESIZE) {
-        return ["sizing", "reset-size" + this.size, "size" + Options.BASESIZE];
-      } else {
-        return [];
-      }
-    }
-    /**
-     * Return the font metrics for this size.
-     */
-    fontMetrics() {
-      if (!this._fontMetrics) {
-        this._fontMetrics = getGlobalMetrics(this.size);
-      }
-      return this._fontMetrics;
-    }
-    /**
-     * Gets the CSS color of the current options object
-     */
-    getColor() {
-      if (this.phantom) {
-        return "transparent";
-      } else {
-        return this.color;
-      }
-    }
-  }
-  Options.BASESIZE = 6;
-  var ptPerUnit = {
-    // https://en.wikibooks.org/wiki/LaTeX/Lengths and
-    // https://tex.stackexchange.com/a/8263
-    "pt": 1,
-    // TeX point
-    "mm": 7227 / 2540,
-    // millimeter
-    "cm": 7227 / 254,
-    // centimeter
-    "in": 72.27,
-    // inch
-    "bp": 803 / 800,
-    // big (PostScript) points
-    "pc": 12,
-    // pica
-    "dd": 1238 / 1157,
-    // didot
-    "cc": 14856 / 1157,
-    // cicero (12 didot)
-    "nd": 685 / 642,
-    // new didot
-    "nc": 1370 / 107,
-    // new cicero (12 new didot)
-    "sp": 1 / 65536,
-    // scaled point (TeX's internal smallest unit)
-    // https://tex.stackexchange.com/a/41371
-    "px": 803 / 800
-    // \pdfpxdimen defaults to 1 bp in pdfTeX and LuaTeX
-  };
-  var relativeUnit = {
-    "ex": true,
-    "em": true,
-    "mu": true
-  };
-  var validUnit = function validUnit2(unit2) {
-    if (typeof unit2 !== "string") {
-      unit2 = unit2.unit;
-    }
-    return unit2 in ptPerUnit || unit2 in relativeUnit || unit2 === "ex";
-  };
-  var calculateSize = function calculateSize2(sizeValue, options2) {
-    var scale;
-    if (sizeValue.unit in ptPerUnit) {
-      scale = ptPerUnit[sizeValue.unit] / options2.fontMetrics().ptPerEm / options2.sizeMultiplier;
-    } else if (sizeValue.unit === "mu") {
-      scale = options2.fontMetrics().cssEmPerMu;
-    } else {
-      var unitOptions;
-      if (options2.style.isTight()) {
-        unitOptions = options2.havingStyle(options2.style.text());
-      } else {
-        unitOptions = options2;
-      }
-      if (sizeValue.unit === "ex") {
-        scale = unitOptions.fontMetrics().xHeight;
-      } else if (sizeValue.unit === "em") {
-        scale = unitOptions.fontMetrics().quad;
-      } else {
-        throw new ParseError("Invalid unit: '" + sizeValue.unit + "'");
-      }
-      if (unitOptions !== options2) {
-        scale *= unitOptions.sizeMultiplier / options2.sizeMultiplier;
-      }
-    }
-    return Math.min(sizeValue.number * scale, options2.maxSize);
-  };
-  var makeEm = function makeEm2(n) {
-    return +n.toFixed(4) + "em";
-  };
-  var createClass = function createClass2(classes2) {
-    return classes2.filter((cls) => cls).join(" ");
-  };
-  var initNode = function initNode2(classes2, options2, style) {
-    this.classes = classes2 || [];
-    this.attributes = {};
-    this.height = 0;
-    this.depth = 0;
-    this.maxFontSize = 0;
-    this.style = style || {};
-    if (options2) {
-      if (options2.style.isTight()) {
-        this.classes.push("mtight");
-      }
-      var color2 = options2.getColor();
-      if (color2) {
-        this.style.color = color2;
-      }
-    }
-  };
-  var toNode = function toNode2(tagName) {
-    var node2 = document.createElement(tagName);
-    node2.className = createClass(this.classes);
-    for (var style in this.style) {
-      if (this.style.hasOwnProperty(style)) {
-        node2.style[style] = this.style[style];
-      }
-    }
-    for (var attr in this.attributes) {
-      if (this.attributes.hasOwnProperty(attr)) {
-        node2.setAttribute(attr, this.attributes[attr]);
-      }
-    }
-    for (var i2 = 0; i2 < this.children.length; i2++) {
-      node2.appendChild(this.children[i2].toNode());
-    }
-    return node2;
-  };
-  var toMarkup = function toMarkup2(tagName) {
-    var markup = "<" + tagName;
-    if (this.classes.length) {
-      markup += ' class="' + utils.escape(createClass(this.classes)) + '"';
-    }
-    var styles2 = "";
-    for (var style in this.style) {
-      if (this.style.hasOwnProperty(style)) {
-        styles2 += utils.hyphenate(style) + ":" + this.style[style] + ";";
-      }
-    }
-    if (styles2) {
-      markup += ' style="' + utils.escape(styles2) + '"';
-    }
-    for (var attr in this.attributes) {
-      if (this.attributes.hasOwnProperty(attr)) {
-        markup += " " + attr + '="' + utils.escape(this.attributes[attr]) + '"';
-      }
-    }
-    markup += ">";
-    for (var i2 = 0; i2 < this.children.length; i2++) {
-      markup += this.children[i2].toMarkup();
-    }
-    markup += "</" + tagName + ">";
-    return markup;
-  };
-  class Span {
-    constructor(classes2, children2, options2, style) {
-      this.children = void 0;
-      this.attributes = void 0;
-      this.classes = void 0;
-      this.height = void 0;
-      this.depth = void 0;
-      this.width = void 0;
-      this.maxFontSize = void 0;
-      this.style = void 0;
-      initNode.call(this, classes2, options2, style);
-      this.children = children2 || [];
-    }
-    /**
-     * Sets an arbitrary attribute on the span. Warning: use this wisely. Not
-     * all browsers support attributes the same, and having too many custom
-     * attributes is probably bad.
-     */
-    setAttribute(attribute, value2) {
-      this.attributes[attribute] = value2;
-    }
-    hasClass(className) {
-      return utils.contains(this.classes, className);
-    }
-    toNode() {
-      return toNode.call(this, "span");
-    }
-    toMarkup() {
-      return toMarkup.call(this, "span");
-    }
-  }
-  class Anchor {
-    constructor(href, classes2, children2, options2) {
-      this.children = void 0;
-      this.attributes = void 0;
-      this.classes = void 0;
-      this.height = void 0;
-      this.depth = void 0;
-      this.maxFontSize = void 0;
-      this.style = void 0;
-      initNode.call(this, classes2, options2);
-      this.children = children2 || [];
-      this.setAttribute("href", href);
-    }
-    setAttribute(attribute, value2) {
-      this.attributes[attribute] = value2;
-    }
-    hasClass(className) {
-      return utils.contains(this.classes, className);
-    }
-    toNode() {
-      return toNode.call(this, "a");
-    }
-    toMarkup() {
-      return toMarkup.call(this, "a");
-    }
-  }
-  class Img {
-    constructor(src, alt, style) {
-      this.src = void 0;
-      this.alt = void 0;
-      this.classes = void 0;
-      this.height = void 0;
-      this.depth = void 0;
-      this.maxFontSize = void 0;
-      this.style = void 0;
-      this.alt = alt;
-      this.src = src;
-      this.classes = ["mord"];
-      this.style = style;
-    }
-    hasClass(className) {
-      return utils.contains(this.classes, className);
-    }
-    toNode() {
-      var node2 = document.createElement("img");
-      node2.src = this.src;
-      node2.alt = this.alt;
-      node2.className = "mord";
-      for (var style in this.style) {
-        if (this.style.hasOwnProperty(style)) {
-          node2.style[style] = this.style[style];
-        }
-      }
-      return node2;
-    }
-    toMarkup() {
-      var markup = '<img src="' + utils.escape(this.src) + '"' + (' alt="' + utils.escape(this.alt) + '"');
-      var styles2 = "";
-      for (var style in this.style) {
-        if (this.style.hasOwnProperty(style)) {
-          styles2 += utils.hyphenate(style) + ":" + this.style[style] + ";";
-        }
-      }
-      if (styles2) {
-        markup += ' style="' + utils.escape(styles2) + '"';
-      }
-      markup += "'/>";
-      return markup;
-    }
-  }
-  var iCombinations = {
-    "î": "ı̂",
-    "ï": "ı̈",
-    "í": "ı́",
-    // 'ī': '\u0131\u0304', // enable when we add Extended Latin
-    "ì": "ı̀"
-  };
-  class SymbolNode {
-    constructor(text2, height, depth, italic, skew, width2, classes2, style) {
-      this.text = void 0;
-      this.height = void 0;
-      this.depth = void 0;
-      this.italic = void 0;
-      this.skew = void 0;
-      this.width = void 0;
-      this.maxFontSize = void 0;
-      this.classes = void 0;
-      this.style = void 0;
-      this.text = text2;
-      this.height = height || 0;
-      this.depth = depth || 0;
-      this.italic = italic || 0;
-      this.skew = skew || 0;
-      this.width = width2 || 0;
-      this.classes = classes2 || [];
-      this.style = style || {};
-      this.maxFontSize = 0;
-      var script = scriptFromCodepoint(this.text.charCodeAt(0));
-      if (script) {
-        this.classes.push(script + "_fallback");
-      }
-      if (/[îïíì]/.test(this.text)) {
-        this.text = iCombinations[this.text];
-      }
-    }
-    hasClass(className) {
-      return utils.contains(this.classes, className);
-    }
-    /**
-     * Creates a text node or span from a symbol node. Note that a span is only
-     * created if it is needed.
-     */
-    toNode() {
-      var node2 = document.createTextNode(this.text);
-      var span = null;
-      if (this.italic > 0) {
-        span = document.createElement("span");
-        span.style.marginRight = makeEm(this.italic);
-      }
-      if (this.classes.length > 0) {
-        span = span || document.createElement("span");
-        span.className = createClass(this.classes);
-      }
-      for (var style in this.style) {
-        if (this.style.hasOwnProperty(style)) {
-          span = span || document.createElement("span");
-          span.style[style] = this.style[style];
-        }
-      }
-      if (span) {
-        span.appendChild(node2);
-        return span;
-      } else {
-        return node2;
-      }
-    }
-    /**
-     * Creates markup for a symbol node.
-     */
-    toMarkup() {
-      var needsSpan = false;
-      var markup = "<span";
-      if (this.classes.length) {
-        needsSpan = true;
-        markup += ' class="';
-        markup += utils.escape(createClass(this.classes));
-        markup += '"';
-      }
-      var styles2 = "";
-      if (this.italic > 0) {
-        styles2 += "margin-right:" + this.italic + "em;";
-      }
-      for (var style in this.style) {
-        if (this.style.hasOwnProperty(style)) {
-          styles2 += utils.hyphenate(style) + ":" + this.style[style] + ";";
-        }
-      }
-      if (styles2) {
-        needsSpan = true;
-        markup += ' style="' + utils.escape(styles2) + '"';
-      }
-      var escaped = utils.escape(this.text);
-      if (needsSpan) {
-        markup += ">";
-        markup += escaped;
-        markup += "</span>";
-        return markup;
-      } else {
-        return escaped;
-      }
-    }
-  }
-  class SvgNode {
-    constructor(children2, attributes) {
-      this.children = void 0;
-      this.attributes = void 0;
-      this.children = children2 || [];
-      this.attributes = attributes || {};
-    }
-    toNode() {
-      var svgNS = "http://www.w3.org/2000/svg";
-      var node2 = document.createElementNS(svgNS, "svg");
-      for (var attr in this.attributes) {
-        if (Object.prototype.hasOwnProperty.call(this.attributes, attr)) {
-          node2.setAttribute(attr, this.attributes[attr]);
-        }
-      }
-      for (var i2 = 0; i2 < this.children.length; i2++) {
-        node2.appendChild(this.children[i2].toNode());
-      }
-      return node2;
-    }
-    toMarkup() {
-      var markup = '<svg xmlns="http://www.w3.org/2000/svg"';
-      for (var attr in this.attributes) {
-        if (Object.prototype.hasOwnProperty.call(this.attributes, attr)) {
-          markup += " " + attr + '="' + utils.escape(this.attributes[attr]) + '"';
-        }
-      }
-      markup += ">";
-      for (var i2 = 0; i2 < this.children.length; i2++) {
-        markup += this.children[i2].toMarkup();
-      }
-      markup += "</svg>";
-      return markup;
-    }
-  }
-  class PathNode {
-    constructor(pathName, alternate) {
-      this.pathName = void 0;
-      this.alternate = void 0;
-      this.pathName = pathName;
-      this.alternate = alternate;
-    }
-    toNode() {
-      var svgNS = "http://www.w3.org/2000/svg";
-      var node2 = document.createElementNS(svgNS, "path");
-      if (this.alternate) {
-        node2.setAttribute("d", this.alternate);
-      } else {
-        node2.setAttribute("d", path$1[this.pathName]);
-      }
-      return node2;
-    }
-    toMarkup() {
-      if (this.alternate) {
-        return '<path d="' + utils.escape(this.alternate) + '"/>';
-      } else {
-        return '<path d="' + utils.escape(path$1[this.pathName]) + '"/>';
-      }
-    }
-  }
-  class LineNode {
-    constructor(attributes) {
-      this.attributes = void 0;
-      this.attributes = attributes || {};
-    }
-    toNode() {
-      var svgNS = "http://www.w3.org/2000/svg";
-      var node2 = document.createElementNS(svgNS, "line");
-      for (var attr in this.attributes) {
-        if (Object.prototype.hasOwnProperty.call(this.attributes, attr)) {
-          node2.setAttribute(attr, this.attributes[attr]);
-        }
-      }
-      return node2;
-    }
-    toMarkup() {
-      var markup = "<line";
-      for (var attr in this.attributes) {
-        if (Object.prototype.hasOwnProperty.call(this.attributes, attr)) {
-          markup += " " + attr + '="' + utils.escape(this.attributes[attr]) + '"';
-        }
-      }
-      markup += "/>";
-      return markup;
-    }
-  }
-  function assertSymbolDomNode(group) {
-    if (group instanceof SymbolNode) {
-      return group;
-    } else {
-      throw new Error("Expected symbolNode but got " + String(group) + ".");
-    }
-  }
-  function assertSpan(group) {
-    if (group instanceof Span) {
-      return group;
-    } else {
-      throw new Error("Expected span<HtmlDomNode> but got " + String(group) + ".");
-    }
-  }
   var ATOMS = {
     "bin": 1,
     "close": 1,
@@ -18821,6 +18572,8 @@ ${config2.themeCSS}`;
   defineSymbol(math, main, rel, "∋", "\\owns");
   defineSymbol(math, main, punct, ".", "\\ldotp");
   defineSymbol(math, main, punct, "⋅", "\\cdotp");
+  defineSymbol(math, main, punct, "⋅", "·");
+  defineSymbol(text$2, main, textord, "⋅", "·");
   defineSymbol(math, main, textord, "#", "\\#");
   defineSymbol(text$2, main, textord, "#", "\\#");
   defineSymbol(math, main, textord, "&", "\\&");
@@ -19328,6 +19081,7 @@ ${config2.themeCSS}`;
   defineSymbol(math, main, inner, "⋯", "\\@cdots", true);
   defineSymbol(math, main, inner, "⋱", "\\ddots", true);
   defineSymbol(math, main, textord, "⋮", "\\varvdots");
+  defineSymbol(text$2, main, textord, "⋮", "\\varvdots");
   defineSymbol(math, main, accent, "ˊ", "\\acute");
   defineSymbol(math, main, accent, "ˋ", "\\grave");
   defineSymbol(math, main, accent, "¨", "\\ddot");
@@ -19556,7 +19310,7 @@ ${config2.themeCSS}`;
     ["mathtt", "texttt", "Typewriter-Regular"]
     // 0-9 monospace
   ];
-  var wideCharacterFont = function wideCharacterFont2(wideChar2, mode) {
+  var wideCharacterFont = (wideChar2, mode) => {
     var H = wideChar2.charCodeAt(0);
     var L = wideChar2.charCodeAt(1);
     var codePoint = (H - 55296) * 1024 + (L - 56320) + 65536;
@@ -19576,8 +19330,11 @@ ${config2.themeCSS}`;
     }
   };
   var lookupSymbol = function lookupSymbol2(value2, fontName, mode) {
-    if (symbols[mode][value2] && symbols[mode][value2].replace) {
-      value2 = symbols[mode][value2].replace;
+    if (symbols[mode][value2]) {
+      var replacement = symbols[mode][value2].replace;
+      if (replacement) {
+        value2 = replacement;
+      }
     }
     return {
       value: value2,
@@ -19692,7 +19449,7 @@ ${config2.themeCSS}`;
     }
   };
   var canCombine = (prev2, next2) => {
-    if (createClass(prev2.classes) !== createClass(next2.classes) || prev2.skew !== next2.skew || prev2.maxFontSize !== next2.maxFontSize) {
+    if (createClass(prev2.classes) !== createClass(next2.classes) || prev2.skew !== next2.skew || prev2.maxFontSize !== next2.maxFontSize || prev2.italic !== 0 && prev2.hasClass("mathnormal")) {
       return false;
     }
     if (prev2.classes.length === 1) {
@@ -19701,13 +19458,13 @@ ${config2.themeCSS}`;
         return false;
       }
     }
-    for (var style in prev2.style) {
-      if (prev2.style.hasOwnProperty(style) && prev2.style[style] !== next2.style[style]) {
+    for (var key of Object.keys(prev2.style)) {
+      if (prev2.style[key] !== next2.style[key]) {
         return false;
       }
     }
-    for (var _style in next2.style) {
-      if (next2.style.hasOwnProperty(_style) && prev2.style[_style] !== next2.style[_style]) {
+    for (var _key of Object.keys(next2.style)) {
+      if (prev2.style[_key] !== next2.style[_key]) {
         return false;
       }
     }
@@ -19748,14 +19505,14 @@ ${config2.themeCSS}`;
     elem.depth = depth;
     elem.maxFontSize = maxFontSize;
   };
-  var makeSpan$2 = function makeSpan2(classes2, children2, options2, style) {
+  var makeSpan = function makeSpan2(classes2, children2, options2, style) {
     var span = new Span(classes2, children2, options2, style);
     sizeElementFromChildren(span);
     return span;
   };
   var makeSvgSpan = (classes2, children2, options2, style) => new Span(classes2, children2, options2, style);
   var makeLineSpan = function makeLineSpan2(className, options2, thickness) {
-    var line2 = makeSpan$2([className], [], options2);
+    var line2 = makeSpan([className], [], options2);
     line2.height = Math.max(thickness || options2.fontMetrics().defaultRuleThickness, options2.minRuleThickness);
     line2.style.borderBottomWidth = makeEm(line2.height);
     line2.maxFontSize = 1;
@@ -19773,7 +19530,7 @@ ${config2.themeCSS}`;
   };
   var wrapFragment = function wrapFragment2(group, options2) {
     if (group instanceof DocumentFragment) {
-      return makeSpan$2([], [group], options2);
+      return makeSpan([], [group], options2);
     }
     return group;
   };
@@ -19840,7 +19597,7 @@ ${config2.themeCSS}`;
       }
     }
     pstrutSize += 2;
-    var pstrut = makeSpan$2(["pstrut"], []);
+    var pstrut = makeSpan(["pstrut"], []);
     pstrut.style.height = makeEm(pstrutSize);
     var realChildren = [];
     var minPos = depth;
@@ -19854,7 +19611,7 @@ ${config2.themeCSS}`;
         var _elem = _child.elem;
         var classes2 = _child.wrapperClasses || [];
         var style = _child.wrapperStyle || {};
-        var childWrap = makeSpan$2(classes2, [pstrut, _elem], void 0, style);
+        var childWrap = makeSpan(classes2, [pstrut, _elem], void 0, style);
         childWrap.style.top = makeEm(-pstrutSize - currPos - _elem.depth);
         if (_child.marginLeft) {
           childWrap.style.marginLeft = _child.marginLeft;
@@ -19868,19 +19625,19 @@ ${config2.themeCSS}`;
       minPos = Math.min(minPos, currPos);
       maxPos2 = Math.max(maxPos2, currPos);
     }
-    var vlist = makeSpan$2(["vlist"], realChildren);
+    var vlist = makeSpan(["vlist"], realChildren);
     vlist.style.height = makeEm(maxPos2);
     var rows;
     if (minPos < 0) {
-      var emptySpan = makeSpan$2([], []);
-      var depthStrut = makeSpan$2(["vlist"], [emptySpan]);
+      var emptySpan = makeSpan([], []);
+      var depthStrut = makeSpan(["vlist"], [emptySpan]);
       depthStrut.style.height = makeEm(-minPos);
-      var topStrut = makeSpan$2(["vlist-s"], [new SymbolNode("​")]);
-      rows = [makeSpan$2(["vlist-r"], [vlist, topStrut]), makeSpan$2(["vlist-r"], [depthStrut])];
+      var topStrut = makeSpan(["vlist-s"], [new SymbolNode("​")]);
+      rows = [makeSpan(["vlist-r"], [vlist, topStrut]), makeSpan(["vlist-r"], [depthStrut])];
     } else {
-      rows = [makeSpan$2(["vlist-r"], [vlist])];
+      rows = [makeSpan(["vlist-r"], [vlist])];
     }
-    var vtable = makeSpan$2(["vlist-t"], rows);
+    var vtable = makeSpan(["vlist-t"], rows);
     if (rows.length === 2) {
       vtable.classes.push("vlist-t2");
     }
@@ -19889,7 +19646,7 @@ ${config2.themeCSS}`;
     return vtable;
   };
   var makeGlue = (measurement, options2) => {
-    var rule = makeSpan$2(["mspace"], [], options2);
+    var rule = makeSpan(["mspace"], [], options2);
     var size2 = calculateSize(measurement, options2);
     rule.style.marginRight = makeEm(size2);
     return rule;
@@ -19946,6 +19703,10 @@ ${config2.themeCSS}`;
       variant: "italic",
       fontName: "Math-Italic"
     },
+    "mathsfit": {
+      variant: "sans-serif-italic",
+      fontName: "SansSerif-Italic"
+    },
     // "boldsymbol" is missing because they require the use of multiple fonts:
     // Math-BoldItalic and Main-Bold.  This is handled by a special case in
     // makeOrd which ends up calling boldsymbol.
@@ -20001,23 +19762,6 @@ ${config2.themeCSS}`;
     span.style.height = makeEm(height);
     span.style.width = makeEm(width2);
     return span;
-  };
-  var buildCommon = {
-    fontMap,
-    makeSymbol,
-    mathsym,
-    makeSpan: makeSpan$2,
-    makeSvgSpan,
-    makeLineSpan,
-    makeAnchor,
-    makeFragment,
-    wrapFragment,
-    makeVList,
-    makeOrd,
-    makeGlue,
-    staticSvg,
-    svgData,
-    tryCombineChars
   };
   var thinspace = {
     number: 3,
@@ -20162,9 +19906,8 @@ ${config2.themeCSS}`;
   var ordargument = function ordargument2(arg) {
     return arg.type === "ordgroup" ? arg.body : [arg];
   };
-  var makeSpan$1 = buildCommon.makeSpan;
-  var binLeftCanceller = ["leftmost", "mbin", "mopen", "mrel", "mop", "mpunct"];
-  var binRightCanceller = ["rightmost", "mrel", "mclose", "mpunct"];
+  var binLeftCanceller = /* @__PURE__ */ new Set(["leftmost", "mbin", "mopen", "mrel", "mop", "mpunct"]);
+  var binRightCanceller = /* @__PURE__ */ new Set(["rightmost", "mrel", "mclose", "mpunct"]);
   var styleMap$1 = {
     "display": Style$1.DISPLAY,
     "text": Style$1.TEXT,
@@ -20195,7 +19938,7 @@ ${config2.themeCSS}`;
         groups.push(output);
       }
     }
-    buildCommon.tryCombineChars(groups);
+    tryCombineChars(groups);
     if (!isRealGroup) {
       return groups;
     }
@@ -20208,33 +19951,34 @@ ${config2.themeCSS}`;
         glueOptions = options2.havingStyle(styleMap$1[node2.style]);
       }
     }
-    var dummyPrev = makeSpan$1([surrounding[0] || "leftmost"], [], options2);
-    var dummyNext = makeSpan$1([surrounding[1] || "rightmost"], [], options2);
+    var dummyPrev = makeSpan([surrounding[0] || "leftmost"], [], options2);
+    var dummyNext = makeSpan([surrounding[1] || "rightmost"], [], options2);
     var isRoot = isRealGroup === "root";
-    traverseNonSpaceNodes(groups, (node3, prev2) => {
+    _traverseNonSpaceNodes(groups, (node3, prev2) => {
       var prevType = prev2.classes[0];
       var type2 = node3.classes[0];
-      if (prevType === "mbin" && utils.contains(binRightCanceller, type2)) {
+      if (prevType === "mbin" && binRightCanceller.has(type2)) {
         prev2.classes[0] = "mord";
-      } else if (type2 === "mbin" && utils.contains(binLeftCanceller, prevType)) {
+      } else if (type2 === "mbin" && binLeftCanceller.has(prevType)) {
         node3.classes[0] = "mord";
       }
     }, {
       node: dummyPrev
     }, dummyNext, isRoot);
-    traverseNonSpaceNodes(groups, (node3, prev2) => {
+    _traverseNonSpaceNodes(groups, (node3, prev2) => {
+      var _tightSpacings$prevTy, _spacings$prevType;
       var prevType = getTypeOfDomTree(prev2);
       var type2 = getTypeOfDomTree(node3);
-      var space = prevType && type2 ? node3.hasClass("mtight") ? tightSpacings[prevType][type2] : spacings[prevType][type2] : null;
+      var space = prevType && type2 ? node3.hasClass("mtight") ? (_tightSpacings$prevTy = tightSpacings[prevType]) == null ? void 0 : _tightSpacings$prevTy[type2] : (_spacings$prevType = spacings[prevType]) == null ? void 0 : _spacings$prevType[type2] : null;
       if (space) {
-        return buildCommon.makeGlue(space, glueOptions);
+        return makeGlue(space, glueOptions);
       }
     }, {
       node: dummyPrev
     }, dummyNext, isRoot);
     return groups;
   };
-  var traverseNonSpaceNodes = function traverseNonSpaceNodes2(nodes2, callback, prev2, next2, isRoot) {
+  var _traverseNonSpaceNodes = function traverseNonSpaceNodes(nodes2, callback, prev2, next2, isRoot) {
     if (next2) {
       nodes2.push(next2);
     }
@@ -20243,7 +19987,7 @@ ${config2.themeCSS}`;
       var node2 = nodes2[i2];
       var partialGroup = checkPartialGroup(node2);
       if (partialGroup) {
-        traverseNonSpaceNodes2(partialGroup.children, callback, prev2, null, isRoot);
+        _traverseNonSpaceNodes(partialGroup.children, callback, prev2, null, isRoot);
         continue;
       }
       var nonspace = !node2.hasClass("mspace");
@@ -20261,7 +20005,7 @@ ${config2.themeCSS}`;
       if (nonspace) {
         prev2.node = node2;
       } else if (isRoot && node2.hasClass("newline")) {
-        prev2.node = makeSpan$1(["leftmost"]);
+        prev2.node = makeSpan(["leftmost"]);
       }
       prev2.insertAfter = ((index2) => (n) => {
         nodes2.splice(index2 + 1, 0, n);
@@ -20278,15 +20022,15 @@ ${config2.themeCSS}`;
     }
     return null;
   };
-  var getOutermostNode = function getOutermostNode2(node2, side) {
+  var _getOutermostNode = function getOutermostNode(node2, side) {
     var partialGroup = checkPartialGroup(node2);
     if (partialGroup) {
       var children2 = partialGroup.children;
       if (children2.length) {
         if (side === "right") {
-          return getOutermostNode2(children2[children2.length - 1], "right");
+          return _getOutermostNode(children2[children2.length - 1], "right");
         } else if (side === "left") {
-          return getOutermostNode2(children2[0], "left");
+          return _getOutermostNode(children2[0], "left");
         }
       }
     }
@@ -20297,22 +20041,23 @@ ${config2.themeCSS}`;
       return null;
     }
     if (side) {
-      node2 = getOutermostNode(node2, side);
+      node2 = _getOutermostNode(node2, side);
     }
-    return DomEnum[node2.classes[0]] || null;
+    var className = node2.classes[0];
+    return DomEnum[className] || null;
   };
   var makeNullDelimiter = function makeNullDelimiter2(options2, classes2) {
     var moreClasses = ["nulldelimiter"].concat(options2.baseSizingClasses());
-    return makeSpan$1(classes2.concat(moreClasses));
+    return makeSpan(classes2.concat(moreClasses));
   };
   var buildGroup$1 = function buildGroup2(group, options2, baseOptions) {
     if (!group) {
-      return makeSpan$1();
+      return makeSpan();
     }
     if (_htmlGroupBuilders[group.type]) {
       var groupNode = _htmlGroupBuilders[group.type](group, options2);
       if (baseOptions && options2.size !== baseOptions.size) {
-        groupNode = makeSpan$1(options2.sizingClasses(baseOptions), [groupNode], options2);
+        groupNode = makeSpan(options2.sizingClasses(baseOptions), [groupNode], options2);
         var multiplier = options2.sizeMultiplier / baseOptions.sizeMultiplier;
         groupNode.height *= multiplier;
         groupNode.depth *= multiplier;
@@ -20323,8 +20068,8 @@ ${config2.themeCSS}`;
     }
   };
   function buildHTMLUnbreakable(children2, options2) {
-    var body = makeSpan$1(["base"], children2, options2);
-    var strut = makeSpan$1(["strut"]);
+    var body = makeSpan(["base"], children2, options2);
+    var strut = makeSpan(["strut"]);
     strut.style.height = makeEm(body.height + body.depth);
     if (body.depth) {
       strut.style.verticalAlign = makeEm(-body.depth);
@@ -20374,13 +20119,13 @@ ${config2.themeCSS}`;
     }
     var tagChild;
     if (tag) {
-      tagChild = buildHTMLUnbreakable(buildExpression$1(tag, options2, true));
+      tagChild = buildHTMLUnbreakable(buildExpression$1(tag, options2, true), options2);
       tagChild.classes = ["tag"];
       children2.push(tagChild);
     } else if (eqnNum) {
       children2.push(eqnNum);
     }
-    var htmlNode = makeSpan$1(["katex-html"], children2);
+    var htmlNode = makeSpan(["katex-html"], children2);
     htmlNode.setAttribute("aria-hidden", "true");
     if (tagChild) {
       var strut = tagChild.children[0];
@@ -20396,10 +20141,6 @@ ${config2.themeCSS}`;
   }
   class MathNode {
     constructor(type2, children2, classes2) {
-      this.type = void 0;
-      this.attributes = void 0;
-      this.children = void 0;
-      this.classes = void 0;
       this.type = type2;
       this.attributes = {};
       this.children = children2 || [];
@@ -20432,7 +20173,15 @@ ${config2.themeCSS}`;
         node2.className = createClass(this.classes);
       }
       for (var i2 = 0; i2 < this.children.length; i2++) {
-        node2.appendChild(this.children[i2].toNode());
+        if (this.children[i2] instanceof TextNode && this.children[i2 + 1] instanceof TextNode) {
+          var text2 = this.children[i2].toText() + this.children[++i2].toText();
+          while (this.children[i2 + 1] instanceof TextNode) {
+            text2 += this.children[++i2].toText();
+          }
+          node2.appendChild(new TextNode(text2).toNode());
+        } else {
+          node2.appendChild(this.children[i2].toNode());
+        }
       }
       return node2;
     }
@@ -20444,12 +20193,12 @@ ${config2.themeCSS}`;
       for (var attr in this.attributes) {
         if (Object.prototype.hasOwnProperty.call(this.attributes, attr)) {
           markup += " " + attr + '="';
-          markup += utils.escape(this.attributes[attr]);
+          markup += escape$1(this.attributes[attr]);
           markup += '"';
         }
       }
       if (this.classes.length > 0) {
-        markup += ' class ="' + utils.escape(createClass(this.classes)) + '"';
+        markup += ' class ="' + escape$1(createClass(this.classes)) + '"';
       }
       markup += ">";
       for (var i2 = 0; i2 < this.children.length; i2++) {
@@ -20467,7 +20216,6 @@ ${config2.themeCSS}`;
   }
   class TextNode {
     constructor(text2) {
-      this.text = void 0;
       this.text = text2;
     }
     /**
@@ -20481,7 +20229,7 @@ ${config2.themeCSS}`;
      * (representing the text itself).
      */
     toMarkup() {
-      return utils.escape(this.toText());
+      return escape$1(this.toText());
     }
     /**
      * Converts the text node into a string
@@ -20496,8 +20244,6 @@ ${config2.themeCSS}`;
      * Create a Space node with width given in CSS ems.
      */
     constructor(width2) {
-      this.width = void 0;
-      this.character = void 0;
       this.width = width2;
       if (width2 >= 0.05555 && width2 <= 0.05556) {
         this.character = " ";
@@ -20552,23 +20298,19 @@ ${config2.themeCSS}`;
       }
     }
   }
-  var mathMLTree = {
-    MathNode,
-    TextNode,
-    SpaceNode,
-    newDocumentFragment
-  };
+  var noVariantSymbols = /* @__PURE__ */ new Set(["\\imath", "\\jmath"]);
+  var rowLikeTypes = /* @__PURE__ */ new Set(["mrow", "mtable"]);
   var makeText = function makeText2(text2, mode, options2) {
     if (symbols[mode][text2] && symbols[mode][text2].replace && text2.charCodeAt(0) !== 55349 && !(ligatures.hasOwnProperty(text2) && options2 && (options2.fontFamily && options2.fontFamily.slice(4, 6) === "tt" || options2.font && options2.font.slice(4, 6) === "tt"))) {
       text2 = symbols[mode][text2].replace;
     }
-    return new mathMLTree.TextNode(text2);
+    return new TextNode(text2);
   };
   var makeRow = function makeRow2(body) {
     if (body.length === 1) {
       return body[0];
     } else {
-      return new mathMLTree.MathNode("mrow", body);
+      return new MathNode("mrow", body);
     }
   };
   var getVariant = function getVariant2(group, options2) {
@@ -20604,6 +20346,8 @@ ${config2.themeCSS}`;
       return "bold";
     } else if (font === "mathbb") {
       return "double-struck";
+    } else if (font === "mathsfit") {
+      return "sans-serif-italic";
     } else if (font === "mathfrak") {
       return "fraktur";
     } else if (font === "mathscr" || font === "mathcal") {
@@ -20614,18 +20358,35 @@ ${config2.themeCSS}`;
       return "monospace";
     }
     var text2 = group.text;
-    if (utils.contains(["\\imath", "\\jmath"], text2)) {
+    if (noVariantSymbols.has(text2)) {
       return null;
     }
-    if (symbols[mode][text2] && symbols[mode][text2].replace) {
-      text2 = symbols[mode][text2].replace;
+    if (symbols[mode][text2]) {
+      var replacement = symbols[mode][text2].replace;
+      if (replacement) {
+        text2 = replacement;
+      }
     }
-    var fontName = buildCommon.fontMap[font].fontName;
+    var fontName = fontMap[font].fontName;
     if (getCharacterMetrics(text2, fontName, mode)) {
-      return buildCommon.fontMap[font].variant;
+      return fontMap[font].variant;
     }
     return null;
   };
+  function isNumberPunctuation(group) {
+    if (!group) {
+      return false;
+    }
+    if (group.type === "mi" && group.children.length === 1) {
+      var child = group.children[0];
+      return child instanceof TextNode && child.text === ".";
+    } else if (group.type === "mo" && group.children.length === 1 && group.getAttribute("separator") === "true" && group.getAttribute("lspace") === "0em" && group.getAttribute("rspace") === "0em") {
+      var _child = group.children[0];
+      return _child instanceof TextNode && _child.text === ",";
+    } else {
+      return false;
+    }
+  }
   var buildExpression = function buildExpression2(expression, options2, isOrdgroup) {
     if (expression.length === 1) {
       var group = buildGroup(expression[0], options2);
@@ -20646,18 +20407,24 @@ ${config2.themeCSS}`;
         } else if (_group.type === "mn" && lastGroup.type === "mn") {
           lastGroup.children.push(..._group.children);
           continue;
-        } else if (_group.type === "mi" && _group.children.length === 1 && lastGroup.type === "mn") {
-          var child = _group.children[0];
-          if (child instanceof TextNode && child.text === ".") {
-            lastGroup.children.push(..._group.children);
-            continue;
+        } else if (isNumberPunctuation(_group) && lastGroup.type === "mn") {
+          lastGroup.children.push(..._group.children);
+          continue;
+        } else if (_group.type === "mn" && isNumberPunctuation(lastGroup)) {
+          _group.children = [...lastGroup.children, ..._group.children];
+          groups.pop();
+        } else if ((_group.type === "msup" || _group.type === "msub") && _group.children.length >= 1 && (lastGroup.type === "mn" || isNumberPunctuation(lastGroup))) {
+          var base = _group.children[0];
+          if (base instanceof MathNode && base.type === "mn") {
+            base.children = [...lastGroup.children, ...base.children];
+            groups.pop();
           }
         } else if (lastGroup.type === "mi" && lastGroup.children.length === 1) {
           var lastChild = lastGroup.children[0];
           if (lastChild instanceof TextNode && lastChild.text === "̸" && (_group.type === "mo" || _group.type === "mi" || _group.type === "mn")) {
-            var _child = _group.children[0];
-            if (_child instanceof TextNode && _child.text.length > 0) {
-              _child.text = _child.text.slice(0, 1) + "̸" + _child.text.slice(1);
+            var child = _group.children[0];
+            if (child instanceof TextNode && child.text.length > 0) {
+              child.text = child.text.slice(0, 1) + "̸" + child.text.slice(1);
               groups.pop();
             }
           }
@@ -20673,7 +20440,7 @@ ${config2.themeCSS}`;
   };
   var buildGroup = function buildGroup2(group, options2) {
     if (!group) {
-      return new mathMLTree.MathNode("mrow");
+      return new MathNode("mrow");
     }
     if (_mathmlGroupBuilders[group.type]) {
       var result = _mathmlGroupBuilders[group.type](group, options2);
@@ -20685,22 +20452,274 @@ ${config2.themeCSS}`;
   function buildMathML(tree, texExpression, options2, isDisplayMode, forMathmlOnly) {
     var expression = buildExpression(tree, options2);
     var wrapper;
-    if (expression.length === 1 && expression[0] instanceof MathNode && utils.contains(["mrow", "mtable"], expression[0].type)) {
+    if (expression.length === 1 && expression[0] instanceof MathNode && rowLikeTypes.has(expression[0].type)) {
       wrapper = expression[0];
     } else {
-      wrapper = new mathMLTree.MathNode("mrow", expression);
+      wrapper = new MathNode("mrow", expression);
     }
-    var annotation = new mathMLTree.MathNode("annotation", [new mathMLTree.TextNode(texExpression)]);
+    var annotation = new MathNode("annotation", [new TextNode(texExpression)]);
     annotation.setAttribute("encoding", "application/x-tex");
-    var semantics = new mathMLTree.MathNode("semantics", [wrapper, annotation]);
-    var math2 = new mathMLTree.MathNode("math", [semantics]);
+    var semantics = new MathNode("semantics", [wrapper, annotation]);
+    var math2 = new MathNode("math", [semantics]);
     math2.setAttribute("xmlns", "http://www.w3.org/1998/Math/MathML");
     if (isDisplayMode) {
       math2.setAttribute("display", "block");
     }
     var wrapperClass = forMathmlOnly ? "katex" : "katex-mathml";
-    return buildCommon.makeSpan([wrapperClass], [math2]);
+    return makeSpan([wrapperClass], [math2]);
   }
+  var sizeStyleMap = [
+    // Each element contains [textsize, scriptsize, scriptscriptsize].
+    // The size mappings are taken from TeX with \normalsize=10pt.
+    [1, 1, 1],
+    // size1: [5, 5, 5]              \tiny
+    [2, 1, 1],
+    // size2: [6, 5, 5]
+    [3, 1, 1],
+    // size3: [7, 5, 5]              \scriptsize
+    [4, 2, 1],
+    // size4: [8, 6, 5]              \footnotesize
+    [5, 2, 1],
+    // size5: [9, 6, 5]              \small
+    [6, 3, 1],
+    // size6: [10, 7, 5]             \normalsize
+    [7, 4, 2],
+    // size7: [12, 8, 6]             \large
+    [8, 6, 3],
+    // size8: [14.4, 10, 7]          \Large
+    [9, 7, 6],
+    // size9: [17.28, 12, 10]        \LARGE
+    [10, 8, 7],
+    // size10: [20.74, 14.4, 12]     \huge
+    [11, 10, 9]
+    // size11: [24.88, 20.74, 17.28] \HUGE
+  ];
+  var sizeMultipliers = [
+    // fontMetrics.js:getGlobalMetrics also uses size indexes, so if
+    // you change size indexes, change that function.
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1,
+    1.2,
+    1.44,
+    1.728,
+    2.074,
+    2.488
+  ];
+  var sizeAtStyle = function sizeAtStyle2(size2, style) {
+    return style.size < 2 ? size2 : sizeStyleMap[size2 - 1][style.size - 1];
+  };
+  class Options {
+    constructor(data) {
+      this.style = data.style;
+      this.color = data.color;
+      this.size = data.size || Options.BASESIZE;
+      this.textSize = data.textSize || this.size;
+      this.phantom = !!data.phantom;
+      this.font = data.font || "";
+      this.fontFamily = data.fontFamily || "";
+      this.fontWeight = data.fontWeight || "";
+      this.fontShape = data.fontShape || "";
+      this.sizeMultiplier = sizeMultipliers[this.size - 1];
+      this.maxSize = data.maxSize;
+      this.minRuleThickness = data.minRuleThickness;
+      this._fontMetrics = void 0;
+    }
+    /**
+     * Returns a new options object with the same properties as "this".  Properties
+     * from "extension" will be copied to the new options object.
+     */
+    extend(extension2) {
+      var data = {
+        style: this.style,
+        size: this.size,
+        textSize: this.textSize,
+        color: this.color,
+        phantom: this.phantom,
+        font: this.font,
+        fontFamily: this.fontFamily,
+        fontWeight: this.fontWeight,
+        fontShape: this.fontShape,
+        maxSize: this.maxSize,
+        minRuleThickness: this.minRuleThickness
+      };
+      Object.assign(data, extension2);
+      return new Options(data);
+    }
+    /**
+     * Return an options object with the given style. If `this.style === style`,
+     * returns `this`.
+     */
+    havingStyle(style) {
+      if (this.style === style) {
+        return this;
+      } else {
+        return this.extend({
+          style,
+          size: sizeAtStyle(this.textSize, style)
+        });
+      }
+    }
+    /**
+     * Return an options object with a cramped version of the current style. If
+     * the current style is cramped, returns `this`.
+     */
+    havingCrampedStyle() {
+      return this.havingStyle(this.style.cramp());
+    }
+    /**
+     * Return an options object with the given size and in at least `\textstyle`.
+     * Returns `this` if appropriate.
+     */
+    havingSize(size2) {
+      if (this.size === size2 && this.textSize === size2) {
+        return this;
+      } else {
+        return this.extend({
+          style: this.style.text(),
+          size: size2,
+          textSize: size2,
+          sizeMultiplier: sizeMultipliers[size2 - 1]
+        });
+      }
+    }
+    /**
+     * Like `this.havingSize(BASESIZE).havingStyle(style)`. If `style` is omitted,
+     * changes to at least `\textstyle`.
+     */
+    havingBaseStyle(style) {
+      style = style || this.style.text();
+      var wantSize = sizeAtStyle(Options.BASESIZE, style);
+      if (this.size === wantSize && this.textSize === Options.BASESIZE && this.style === style) {
+        return this;
+      } else {
+        return this.extend({
+          style,
+          size: wantSize
+        });
+      }
+    }
+    /**
+     * Remove the effect of sizing changes such as \Huge.
+     * Keep the effect of the current style, such as \scriptstyle.
+     */
+    havingBaseSizing() {
+      var size2;
+      switch (this.style.id) {
+        case 4:
+        case 5:
+          size2 = 3;
+          break;
+        case 6:
+        case 7:
+          size2 = 1;
+          break;
+        default:
+          size2 = 6;
+      }
+      return this.extend({
+        style: this.style.text(),
+        size: size2
+      });
+    }
+    /**
+     * Create a new options object with the given color.
+     */
+    withColor(color2) {
+      return this.extend({
+        color: color2
+      });
+    }
+    /**
+     * Create a new options object with "phantom" set to true.
+     */
+    withPhantom() {
+      return this.extend({
+        phantom: true
+      });
+    }
+    /**
+     * Creates a new options object with the given math font or old text font.
+     * @type {[type]}
+     */
+    withFont(font) {
+      return this.extend({
+        font
+      });
+    }
+    /**
+     * Create a new options objects with the given fontFamily.
+     */
+    withTextFontFamily(fontFamily) {
+      return this.extend({
+        fontFamily,
+        font: ""
+      });
+    }
+    /**
+     * Creates a new options object with the given font weight
+     */
+    withTextFontWeight(fontWeight) {
+      return this.extend({
+        fontWeight,
+        font: ""
+      });
+    }
+    /**
+     * Creates a new options object with the given font weight
+     */
+    withTextFontShape(fontShape) {
+      return this.extend({
+        fontShape,
+        font: ""
+      });
+    }
+    /**
+     * Return the CSS sizing classes required to switch from enclosing options
+     * `oldOptions` to `this`. Returns an array of classes.
+     */
+    sizingClasses(oldOptions) {
+      if (oldOptions.size !== this.size) {
+        return ["sizing", "reset-size" + oldOptions.size, "size" + this.size];
+      } else {
+        return [];
+      }
+    }
+    /**
+     * Return the CSS sizing classes required to switch to the base size. Like
+     * `this.havingSize(BASESIZE).sizingClasses(this)`.
+     */
+    baseSizingClasses() {
+      if (this.size !== Options.BASESIZE) {
+        return ["sizing", "reset-size" + this.size, "size" + Options.BASESIZE];
+      } else {
+        return [];
+      }
+    }
+    /**
+     * Return the font metrics for this size.
+     */
+    fontMetrics() {
+      if (!this._fontMetrics) {
+        this._fontMetrics = getGlobalMetrics(this.size);
+      }
+      return this._fontMetrics;
+    }
+    /**
+     * Gets the CSS color of the current options object
+     */
+    getColor() {
+      if (this.phantom) {
+        return "transparent";
+      } else {
+        return this.color;
+      }
+    }
+  }
+  Options.BASESIZE = 6;
   var optionsFromSettings = function optionsFromSettings2(settings) {
     return new Options({
       style: settings.displayMode ? Style$1.DISPLAY : Style$1.TEXT,
@@ -20717,7 +20736,7 @@ ${config2.themeCSS}`;
       if (settings.fleqn) {
         classes2.push("fleqn");
       }
-      node2 = buildCommon.makeSpan(classes2, [node2]);
+      node2 = makeSpan(classes2, [node2]);
     }
     return node2;
   };
@@ -20728,18 +20747,18 @@ ${config2.themeCSS}`;
       return buildMathML(tree, expression, options2, settings.displayMode, true);
     } else if (settings.output === "html") {
       var htmlNode = buildHTML(tree, options2);
-      katexNode = buildCommon.makeSpan(["katex"], [htmlNode]);
+      katexNode = makeSpan(["katex"], [htmlNode]);
     } else {
       var mathMLNode = buildMathML(tree, expression, options2, settings.displayMode, false);
       var _htmlNode = buildHTML(tree, options2);
-      katexNode = buildCommon.makeSpan(["katex"], [mathMLNode, _htmlNode]);
+      katexNode = makeSpan(["katex"], [mathMLNode, _htmlNode]);
     }
     return displayWrap(katexNode, settings);
   };
   var buildHTMLTree = function buildHTMLTree2(tree, expression, settings) {
     var options2 = optionsFromSettings(settings);
     var htmlNode = buildHTML(tree, options2);
-    var katexNode = buildCommon.makeSpan(["katex"], [htmlNode]);
+    var katexNode = makeSpan(["katex"], [htmlNode]);
     return displayWrap(katexNode, settings);
   };
   var stretchyCodePoint = {
@@ -20755,6 +20774,8 @@ ${config2.themeCSS}`;
     xrightarrow: "→",
     underbrace: "⏟",
     overbrace: "⏞",
+    underbracket: "⎵",
+    overbracket: "⎴",
     overgroup: "⏠",
     undergroup: "⏡",
     overleftrightarrow: "↔",
@@ -20788,8 +20809,8 @@ ${config2.themeCSS}`;
     "\\cdleftarrow": "←",
     "\\cdlongequal": "="
   };
-  var mathMLnode = function mathMLnode2(label) {
-    var node2 = new mathMLTree.MathNode("mo", [new mathMLTree.TextNode(stretchyCodePoint[label.replace(/^\\/, "")])]);
+  var stretchyMathML = function stretchyMathML2(label) {
+    var node2 = new MathNode("mo", [new TextNode(stretchyCodePoint[label.replace(/^\\/, "")])]);
     node2.setAttribute("stretchy", "true");
     return node2;
   };
@@ -20829,6 +20850,8 @@ ${config2.themeCSS}`;
     xhookrightarrow: [["lefthook", "rightarrow"], 1.08, 522],
     overlinesegment: [["leftlinesegment", "rightlinesegment"], 0.888, 522],
     underlinesegment: [["leftlinesegment", "rightlinesegment"], 0.888, 522],
+    overbracket: [["leftbracketover", "rightbracketover"], 1.6, 440],
+    underbracket: [["leftbracketunder", "rightbracketunder"], 1.6, 410],
     overgroup: [["leftgroup", "rightgroup"], 0.888, 342],
     undergroup: [["leftgroupunder", "rightgroupunder"], 0.888, 342],
     xmapsto: [["leftmapsto", "rightarrow"], 1.5, 522],
@@ -20841,20 +20864,14 @@ ${config2.themeCSS}`;
     xrightequilibrium: [["baraboveshortleftharpoon", "rightharpoonaboveshortbar"], 1.75, 716],
     xleftequilibrium: [["shortbaraboveleftharpoon", "shortrightharpoonabovebar"], 1.75, 716]
   };
-  var groupLength = function groupLength2(arg) {
-    if (arg.type === "ordgroup") {
-      return arg.body.length;
-    } else {
-      return 1;
-    }
-  };
-  var svgSpan = function svgSpan2(group, options2) {
+  var wideAccentLabels = /* @__PURE__ */ new Set(["widehat", "widecheck", "widetilde", "utilde"]);
+  var stretchySvg = function stretchySvg2(group, options2) {
     function buildSvgSpan_() {
       var viewBoxWidth = 4e5;
       var label = group.label.slice(1);
-      if (utils.contains(["widehat", "widecheck", "widetilde", "utilde"], label)) {
+      if (wideAccentLabels.has(label)) {
         var grp = group;
-        var numChars = groupLength(grp.base);
+        var numChars = grp.base.type === "ordgroup" ? grp.base.body.length : 1;
         var viewBoxHeight;
         var pathName;
         var _height;
@@ -20892,7 +20909,7 @@ ${config2.themeCSS}`;
           "preserveAspectRatio": "none"
         });
         return {
-          span: buildCommon.makeSvgSpan([], [svgNode2], options2),
+          span: makeSvgSpan([], [svgNode2], options2),
           minWidth: 0,
           height: _height
         };
@@ -20925,7 +20942,7 @@ ${config2.themeCSS}`;
             "viewBox": "0 0 " + viewBoxWidth + " " + _viewBoxHeight,
             "preserveAspectRatio": aligns[i2] + " slice"
           });
-          var _span = buildCommon.makeSvgSpan([widthClasses[i2]], [_svgNode], options2);
+          var _span = makeSvgSpan([widthClasses[i2]], [_svgNode], options2);
           if (numSvgChildren === 1) {
             return {
               span: _span,
@@ -20938,7 +20955,7 @@ ${config2.themeCSS}`;
           }
         }
         return {
-          span: buildCommon.makeSpan(["stretchy"], spans, options2),
+          span: makeSpan(["stretchy"], spans, options2),
           minWidth: _minWidth,
           height: _height2
         };
@@ -20956,11 +20973,11 @@ ${config2.themeCSS}`;
     }
     return span;
   };
-  var encloseSpan = function encloseSpan2(inner2, label, topPad, bottomPad, options2) {
+  var stretchyEnclose = function stretchyEnclose2(inner2, label, topPad, bottomPad, options2) {
     var img;
     var totalHeight = inner2.height + inner2.depth + topPad + bottomPad;
     if (/fbox|color|angl/.test(label)) {
-      img = buildCommon.makeSpan(["stretchy", label], [], options2);
+      img = makeSpan(["stretchy", label], [], options2);
       if (label === "fbox") {
         var color2 = options2.color && options2.getColor();
         if (color2) {
@@ -20991,16 +21008,11 @@ ${config2.themeCSS}`;
         "width": "100%",
         "height": makeEm(totalHeight)
       });
-      img = buildCommon.makeSvgSpan([], [svgNode2], options2);
+      img = makeSvgSpan([], [svgNode2], options2);
     }
     img.height = totalHeight;
     img.style.height = makeEm(totalHeight);
     return img;
-  };
-  var stretchy = {
-    encloseSpan,
-    mathMLnode,
-    svgSpan
   };
   function assertNodeType(node2, type2) {
     if (!node2 || node2.type !== type2) {
@@ -21021,6 +21033,14 @@ ${config2.themeCSS}`;
     }
     return null;
   }
+  var getBaseSymbol = (group) => {
+    if (group instanceof SymbolNode) {
+      return group;
+    }
+    if (hasHtmlDomChildren(group) && group.children.length === 1) {
+      return getBaseSymbol(group.children[0]);
+    }
+  };
   var htmlBuilder$a = (grp, options2) => {
     var base;
     var group;
@@ -21036,12 +21056,11 @@ ${config2.themeCSS}`;
       base = group.base;
     }
     var body = buildGroup$1(base, options2.havingCrampedStyle());
-    var mustShift = group.isShifty && utils.isCharacterBox(base);
+    var mustShift = group.isShifty && isCharacterBox(base);
     var skew = 0;
     if (mustShift) {
-      var baseChar = utils.getBaseElem(base);
-      var baseGroup = buildGroup$1(baseChar, options2.havingCrampedStyle());
-      skew = assertSymbolDomNode(baseGroup).skew;
+      var _getBaseSymbol$skew, _getBaseSymbol;
+      skew = (_getBaseSymbol$skew = (_getBaseSymbol = getBaseSymbol(body)) == null ? void 0 : _getBaseSymbol.skew) != null ? _getBaseSymbol$skew : 0;
     }
     var accentBelow = group.label === "\\c";
     var clearance = accentBelow ? body.height + body.depth : Math.min(body.height, options2.fontMetrics().xHeight);
@@ -21050,10 +21069,11 @@ ${config2.themeCSS}`;
       var accent2;
       var width2;
       if (group.label === "\\vec") {
-        accent2 = buildCommon.staticSvg("vec", options2);
-        width2 = buildCommon.svgData.vec[1];
+        accent2 = staticSvg("vec", options2);
+        width2 = svgData.vec[1];
       } else {
-        accent2 = buildCommon.makeOrd({
+        accent2 = makeOrd({
+          type: "textord",
           mode: group.mode,
           text: group.label
         }, options2, "textord");
@@ -21064,7 +21084,7 @@ ${config2.themeCSS}`;
           clearance += accent2.depth;
         }
       }
-      accentBody = buildCommon.makeSpan(["accent-body"], [accent2]);
+      accentBody = makeSpan(["accent-body"], [accent2]);
       var accentFull = group.label === "\\textcircled";
       if (accentFull) {
         accentBody.classes.push("accent-full");
@@ -21078,7 +21098,7 @@ ${config2.themeCSS}`;
       if (group.label === "\\textcircled") {
         accentBody.style.top = ".2em";
       }
-      accentBody = buildCommon.makeVList({
+      accentBody = makeVList({
         positionType: "firstBaseline",
         children: [{
           type: "elem",
@@ -21090,10 +21110,10 @@ ${config2.themeCSS}`;
           type: "elem",
           elem: accentBody
         }]
-      }, options2);
+      });
     } else {
-      accentBody = stretchy.svgSpan(group, options2);
-      accentBody = buildCommon.makeVList({
+      accentBody = stretchySvg(group, options2);
+      accentBody = makeVList({
         positionType: "firstBaseline",
         children: [{
           type: "elem",
@@ -21107,9 +21127,9 @@ ${config2.themeCSS}`;
             marginLeft: makeEm(2 * skew)
           } : void 0
         }]
-      }, options2);
+      });
     }
-    var accentWrap = buildCommon.makeSpan(["mord", "accent"], [accentBody], options2);
+    var accentWrap = makeSpan(["mord", "accent"], [accentBody], options2);
     if (supSubGroup) {
       supSubGroup.children[0] = accentWrap;
       supSubGroup.height = Math.max(accentWrap.height, supSubGroup.height);
@@ -21120,8 +21140,8 @@ ${config2.themeCSS}`;
     }
   };
   var mathmlBuilder$9 = (group, options2) => {
-    var accentNode = group.isStretchy ? stretchy.mathMLnode(group.label) : new mathMLTree.MathNode("mo", [makeText(group.label, group.mode)]);
-    var node2 = new mathMLTree.MathNode("mover", [buildGroup(group.base, options2), accentNode]);
+    var accentNode = group.isStretchy ? stretchyMathML(group.label) : new MathNode("mo", [makeText(group.label, group.mode)]);
+    var node2 = new MathNode("mover", [buildGroup(group.base, options2), accentNode]);
     node2.setAttribute("accent", "true");
     return node2;
   };
@@ -21198,9 +21218,9 @@ ${config2.themeCSS}`;
     },
     htmlBuilder: (group, options2) => {
       var innerGroup = buildGroup$1(group.base, options2);
-      var accentBody = stretchy.svgSpan(group, options2);
+      var accentBody = stretchySvg(group, options2);
       var kern = group.label === "\\utilde" ? 0.12 : 0;
-      var vlist = buildCommon.makeVList({
+      var vlist = makeVList({
         positionType: "top",
         positionData: innerGroup.height,
         children: [{
@@ -21214,18 +21234,18 @@ ${config2.themeCSS}`;
           type: "elem",
           elem: innerGroup
         }]
-      }, options2);
-      return buildCommon.makeSpan(["mord", "accentunder"], [vlist], options2);
+      });
+      return makeSpan(["mord", "accentunder"], [vlist], options2);
     },
     mathmlBuilder: (group, options2) => {
-      var accentNode = stretchy.mathMLnode(group.label);
-      var node2 = new mathMLTree.MathNode("munder", [buildGroup(group.base, options2), accentNode]);
+      var accentNode = stretchyMathML(group.label);
+      var node2 = new MathNode("munder", [buildGroup(group.base, options2), accentNode]);
       node2.setAttribute("accentunder", "true");
       return node2;
     }
   });
   var paddedNode = (group) => {
-    var node2 = new mathMLTree.MathNode("mpadded", group ? [group] : []);
+    var node2 = new MathNode("mpadded", group ? [group] : []);
     node2.setAttribute("width", "+0.6em");
     node2.setAttribute("lspace", "0.3em");
     return node2;
@@ -21279,21 +21299,19 @@ ${config2.themeCSS}`;
         below: optArgs[0]
       };
     },
-    // Flow is unable to correctly infer the type of `group`, even though it's
-    // unambiguously determined from the passed-in `type` above.
     htmlBuilder(group, options2) {
       var style = options2.style;
       var newOptions = options2.havingStyle(style.sup());
-      var upperGroup = buildCommon.wrapFragment(buildGroup$1(group.body, newOptions, options2), options2);
+      var upperGroup = wrapFragment(buildGroup$1(group.body, newOptions, options2), options2);
       var arrowPrefix = group.label.slice(0, 2) === "\\x" ? "x" : "cd";
       upperGroup.classes.push(arrowPrefix + "-arrow-pad");
       var lowerGroup;
       if (group.below) {
         newOptions = options2.havingStyle(style.sub());
-        lowerGroup = buildCommon.wrapFragment(buildGroup$1(group.below, newOptions, options2), options2);
+        lowerGroup = wrapFragment(buildGroup$1(group.below, newOptions, options2), options2);
         lowerGroup.classes.push(arrowPrefix + "-arrow-pad");
       }
-      var arrowBody = stretchy.svgSpan(group, options2);
+      var arrowBody = stretchySvg(group, options2);
       var arrowShift = -options2.fontMetrics().axisHeight + 0.5 * arrowBody.height;
       var upperShift = -options2.fontMetrics().axisHeight - 0.5 * arrowBody.height - 0.111;
       if (upperGroup.depth > 0.25 || group.label === "\\xleftequilibrium") {
@@ -21302,7 +21320,7 @@ ${config2.themeCSS}`;
       var vlist;
       if (lowerGroup) {
         var lowerShift = -options2.fontMetrics().axisHeight + lowerGroup.height + 0.5 * arrowBody.height + 0.111;
-        vlist = buildCommon.makeVList({
+        vlist = makeVList({
           positionType: "individualShift",
           children: [{
             type: "elem",
@@ -21317,9 +21335,9 @@ ${config2.themeCSS}`;
             elem: lowerGroup,
             shift: lowerShift
           }]
-        }, options2);
+        });
       } else {
-        vlist = buildCommon.makeVList({
+        vlist = makeVList({
           positionType: "individualShift",
           children: [{
             type: "elem",
@@ -21330,34 +21348,33 @@ ${config2.themeCSS}`;
             elem: arrowBody,
             shift: arrowShift
           }]
-        }, options2);
+        });
       }
       vlist.children[0].children[0].children[1].classes.push("svg-align");
-      return buildCommon.makeSpan(["mrel", "x-arrow"], [vlist], options2);
+      return makeSpan(["mrel", "x-arrow"], [vlist], options2);
     },
     mathmlBuilder(group, options2) {
-      var arrowNode = stretchy.mathMLnode(group.label);
+      var arrowNode = stretchyMathML(group.label);
       arrowNode.setAttribute("minsize", group.label.charAt(0) === "x" ? "1.75em" : "3.0em");
       var node2;
       if (group.body) {
         var upperNode = paddedNode(buildGroup(group.body, options2));
         if (group.below) {
           var lowerNode = paddedNode(buildGroup(group.below, options2));
-          node2 = new mathMLTree.MathNode("munderover", [arrowNode, lowerNode, upperNode]);
+          node2 = new MathNode("munderover", [arrowNode, lowerNode, upperNode]);
         } else {
-          node2 = new mathMLTree.MathNode("mover", [arrowNode, upperNode]);
+          node2 = new MathNode("mover", [arrowNode, upperNode]);
         }
       } else if (group.below) {
         var _lowerNode = paddedNode(buildGroup(group.below, options2));
-        node2 = new mathMLTree.MathNode("munder", [arrowNode, _lowerNode]);
+        node2 = new MathNode("munder", [arrowNode, _lowerNode]);
       } else {
         node2 = paddedNode();
-        node2 = new mathMLTree.MathNode("mover", [arrowNode, node2]);
+        node2 = new MathNode("mover", [arrowNode, node2]);
       }
       return node2;
     }
   });
-  var makeSpan = buildCommon.makeSpan;
   function htmlBuilder$9(group, options2) {
     var elements2 = buildExpression$1(group.body, options2, true);
     return makeSpan([group.mclass], elements2, options2);
@@ -21366,20 +21383,20 @@ ${config2.themeCSS}`;
     var node2;
     var inner2 = buildExpression(group.body, options2);
     if (group.mclass === "minner") {
-      node2 = new mathMLTree.MathNode("mpadded", inner2);
+      node2 = new MathNode("mpadded", inner2);
     } else if (group.mclass === "mord") {
       if (group.isCharacterBox) {
         node2 = inner2[0];
         node2.type = "mi";
       } else {
-        node2 = new mathMLTree.MathNode("mi", inner2);
+        node2 = new MathNode("mi", inner2);
       }
     } else {
       if (group.isCharacterBox) {
         node2 = inner2[0];
         node2.type = "mo";
       } else {
-        node2 = new mathMLTree.MathNode("mo", inner2);
+        node2 = new MathNode("mo", inner2);
       }
       if (group.mclass === "mbin") {
         node2.attributes.lspace = "0.22em";
@@ -21416,7 +21433,7 @@ ${config2.themeCSS}`;
         mclass: "m" + funcName.slice(5),
         // TODO(kevinb): don't prefix with 'm'
         body: ordargument(body),
-        isCharacterBox: utils.isCharacterBox(body)
+        isCharacterBox: isCharacterBox(body)
       };
     },
     htmlBuilder: htmlBuilder$9,
@@ -21445,7 +21462,7 @@ ${config2.themeCSS}`;
         mode: parser2.mode,
         mclass: binrelClass(args[0]),
         body: ordargument(args[1]),
-        isCharacterBox: utils.isCharacterBox(args[1])
+        isCharacterBox: isCharacterBox(args[1])
       };
     }
   });
@@ -21490,7 +21507,7 @@ ${config2.themeCSS}`;
         mode: parser2.mode,
         mclass,
         body: [supsub],
-        isCharacterBox: utils.isCharacterBox(supsub)
+        isCharacterBox: isCharacterBox(supsub)
       };
     },
     htmlBuilder: htmlBuilder$9,
@@ -21516,13 +21533,13 @@ ${config2.themeCSS}`;
     },
     htmlBuilder(group, options2) {
       var elements2 = buildExpression$1(group.body, options2, true);
-      var node2 = buildCommon.makeSpan([group.mclass], elements2, options2);
+      var node2 = makeSpan([group.mclass], elements2, options2);
       node2.style.textShadow = "0.02em 0.01em 0.04px";
       return node2;
     },
     mathmlBuilder(group, style) {
       var inner2 = buildExpression(group.body, style);
-      var node2 = new mathMLTree.MathNode("mstyle", inner2);
+      var node2 = new MathNode("mstyle", inner2);
       node2.setAttribute("style", "text-shadow: 0.02em 0.01em 0.04px");
       return node2;
     }
@@ -21636,9 +21653,9 @@ ${config2.themeCSS}`;
             mode: "math",
             body: []
           };
-          if ("=|.".indexOf(arrowChar) > -1)
+          if ("=|.".includes(arrowChar))
             ;
-          else if ("<>AV".indexOf(arrowChar) > -1) {
+          else if ("<>AV".includes(arrowChar)) {
             for (var labelNum = 0; labelNum < 2; labelNum++) {
               var inLabel = true;
               for (var k = j + 1; k < rowNodes.length; k++) {
@@ -21721,7 +21738,7 @@ ${config2.themeCSS}`;
     },
     htmlBuilder(group, options2) {
       var newOptions = options2.havingStyle(options2.style.sup());
-      var label = buildCommon.wrapFragment(buildGroup$1(group.label, newOptions, options2), options2);
+      var label = wrapFragment(buildGroup$1(group.label, newOptions, options2), options2);
       label.classes.push("cd-label-" + group.side);
       label.style.bottom = makeEm(0.8 - label.depth);
       label.height = 0;
@@ -21729,14 +21746,14 @@ ${config2.themeCSS}`;
       return label;
     },
     mathmlBuilder(group, options2) {
-      var label = new mathMLTree.MathNode("mrow", [buildGroup(group.label, options2)]);
-      label = new mathMLTree.MathNode("mpadded", [label]);
+      var label = new MathNode("mrow", [buildGroup(group.label, options2)]);
+      label = new MathNode("mpadded", [label]);
       label.setAttribute("width", "0");
       if (group.side === "left") {
         label.setAttribute("lspace", "-1width");
       }
       label.setAttribute("voffset", "0.7em");
-      label = new mathMLTree.MathNode("mstyle", [label]);
+      label = new MathNode("mstyle", [label]);
       label.setAttribute("displaystyle", "false");
       label.setAttribute("scriptlevel", "1");
       return label;
@@ -21759,12 +21776,12 @@ ${config2.themeCSS}`;
       };
     },
     htmlBuilder(group, options2) {
-      var parent = buildCommon.wrapFragment(buildGroup$1(group.fragment, options2), options2);
+      var parent = wrapFragment(buildGroup$1(group.fragment, options2), options2);
       parent.classes.push("cd-vert-arrow");
       return parent;
     },
     mathmlBuilder(group, options2) {
-      return new mathMLTree.MathNode("mrow", [buildGroup(group.fragment, options2)]);
+      return new MathNode("mrow", [buildGroup(group.fragment, options2)]);
     }
   });
   defineFunction({
@@ -21806,11 +21823,11 @@ ${config2.themeCSS}`;
   });
   var htmlBuilder$8 = (group, options2) => {
     var elements2 = buildExpression$1(group.body, options2.withColor(group.color), false);
-    return buildCommon.makeFragment(elements2);
+    return makeFragment(elements2);
   };
   var mathmlBuilder$7 = (group, options2) => {
     var inner2 = buildExpression(group.body, options2.withColor(group.color));
-    var node2 = new mathMLTree.MathNode("mstyle", inner2);
+    var node2 = new MathNode("mstyle", inner2);
     node2.setAttribute("mathcolor", group.color);
     return node2;
   };
@@ -21888,7 +21905,7 @@ ${config2.themeCSS}`;
     // The following builders are called only at the top level,
     // not within tabular/array environments.
     htmlBuilder(group, options2) {
-      var span = buildCommon.makeSpan(["mspace"], [], options2);
+      var span = makeSpan(["mspace"], [], options2);
       if (group.newLine) {
         span.classes.push("newline");
         if (group.size) {
@@ -21898,7 +21915,7 @@ ${config2.themeCSS}`;
       return span;
     },
     mathmlBuilder(group, options2) {
-      var node2 = new mathMLTree.MathNode("mspace");
+      var node2 = new MathNode("mspace");
       if (group.newLine) {
         node2.setAttribute("linebreak", "newline");
         if (group.size) {
@@ -22108,7 +22125,7 @@ ${config2.themeCSS}`;
   };
   var styleWrap = function styleWrap2(delim, toStyle, options2, classes2) {
     var newOptions = options2.havingBaseStyle(toStyle);
-    var span = buildCommon.makeSpan(classes2.concat(newOptions.sizingClasses(options2)), [delim], options2);
+    var span = makeSpan(classes2.concat(newOptions.sizingClasses(options2)), [delim], options2);
     var delimSizeMultiplier = newOptions.sizeMultiplier / options2.sizeMultiplier;
     span.height *= delimSizeMultiplier;
     span.depth *= delimSizeMultiplier;
@@ -22124,7 +22141,7 @@ ${config2.themeCSS}`;
     span.depth += shift;
   };
   var makeSmallDelim = function makeSmallDelim2(delim, style, center2, options2, mode, classes2) {
-    var text2 = buildCommon.makeSymbol(delim, "Main-Regular", mode, options2);
+    var text2 = makeSymbol(delim, "Main-Regular", mode, options2);
     var span = styleWrap(text2, style, options2, classes2);
     if (center2) {
       centerSpan(span, options2, style);
@@ -22132,11 +22149,11 @@ ${config2.themeCSS}`;
     return span;
   };
   var mathrmSize = function mathrmSize2(value2, size2, mode, options2) {
-    return buildCommon.makeSymbol(value2, "Size" + size2 + "-Regular", mode, options2);
+    return makeSymbol(value2, "Size" + size2 + "-Regular", mode, options2);
   };
   var makeLargeDelim = function makeLargeDelim2(delim, size2, center2, options2, mode, classes2) {
     var inner2 = mathrmSize(delim, size2, mode, options2);
-    var span = styleWrap(buildCommon.makeSpan(["delimsizing", "size" + size2], [inner2], options2), Style$1.TEXT, options2, classes2);
+    var span = styleWrap(makeSpan(["delimsizing", "size" + size2], [inner2], options2), Style$1.TEXT, options2, classes2);
     if (center2) {
       centerSpan(span, options2, Style$1.TEXT);
     }
@@ -22149,7 +22166,7 @@ ${config2.themeCSS}`;
     } else {
       sizeClass = "delim-size4";
     }
-    var corner = buildCommon.makeSpan(["delimsizinginner", sizeClass], [buildCommon.makeSpan([], [buildCommon.makeSymbol(symbol, font, mode)])]);
+    var corner = makeSpan(["delimsizinginner", sizeClass], [makeSpan([], [makeSymbol(symbol, font, mode)])]);
     return {
       type: "elem",
       elem: corner
@@ -22166,7 +22183,7 @@ ${config2.themeCSS}`;
       "viewBox": "0 0 " + 1e3 * width2 + " " + Math.round(1e3 * height),
       "preserveAspectRatio": "xMinYMin"
     });
-    var span = buildCommon.makeSvgSpan([], [svgNode2], options2);
+    var span = makeSvgSpan([], [svgNode2], options2);
     span.height = height;
     span.style.height = makeEm(height);
     span.style.width = makeEm(width2);
@@ -22180,8 +22197,8 @@ ${config2.themeCSS}`;
     type: "kern",
     size: -1 * lapInEms
   };
-  var verts = ["|", "\\lvert", "\\rvert", "\\vert"];
-  var doubleVerts = ["\\|", "\\lVert", "\\rVert", "\\Vert"];
+  var verts = /* @__PURE__ */ new Set(["|", "\\lvert", "\\rvert", "\\vert"]);
+  var doubleVerts = /* @__PURE__ */ new Set(["\\|", "\\lVert", "\\rVert", "\\Vert"]);
   var makeStackedDelim = function makeStackedDelim2(delim, heightTotal, center2, options2, mode, classes2) {
     var top2;
     var middle;
@@ -22208,11 +22225,11 @@ ${config2.themeCSS}`;
       top2 = "\\Uparrow";
       repeat2 = "‖";
       bottom2 = "\\Downarrow";
-    } else if (utils.contains(verts, delim)) {
+    } else if (verts.has(delim)) {
       repeat2 = "∣";
       svgLabel = "vert";
       viewBoxWidth = 333;
-    } else if (utils.contains(doubleVerts, delim)) {
+    } else if (doubleVerts.has(delim)) {
       repeat2 = "∥";
       svgLabel = "doublevert";
       viewBoxWidth = 556;
@@ -22328,14 +22345,14 @@ ${config2.themeCSS}`;
       var viewBoxHeight = Math.round(realHeightTotal * 1e3);
       var pathStr = tallDelim(svgLabel, Math.round(midHeight * 1e3));
       var path2 = new PathNode(svgLabel, pathStr);
-      var width2 = (viewBoxWidth / 1e3).toFixed(3) + "em";
-      var height = (viewBoxHeight / 1e3).toFixed(3) + "em";
+      var width2 = makeEm(viewBoxWidth / 1e3);
+      var height = makeEm(viewBoxHeight / 1e3);
       var svg2 = new SvgNode([path2], {
         "width": width2,
         "height": height,
         "viewBox": "0 0 " + viewBoxWidth + " " + viewBoxHeight
       });
-      var wrapper = buildCommon.makeSvgSpan([], [svg2], options2);
+      var wrapper = makeSvgSpan([], [svg2], options2);
       wrapper.height = viewBoxHeight / 1e3;
       wrapper.style.width = width2;
       wrapper.style.height = height;
@@ -22361,12 +22378,12 @@ ${config2.themeCSS}`;
       stack.push(makeGlyphSpan(top2, font, mode));
     }
     var newOptions = options2.havingBaseStyle(Style$1.TEXT);
-    var inner2 = buildCommon.makeVList({
+    var inner2 = makeVList({
       positionType: "bottom",
       positionData: depth,
       children: stack
-    }, newOptions);
-    return styleWrap(buildCommon.makeSpan(["delimsizing", "mult"], [inner2], newOptions), Style$1.TEXT, options2, classes2);
+    });
+    return styleWrap(makeSpan(["delimsizing", "mult"], [inner2], newOptions), Style$1.TEXT, options2, classes2);
   };
   var vbPad = 80;
   var emPad = 0.08;
@@ -22380,7 +22397,7 @@ ${config2.themeCSS}`;
       "viewBox": "0 0 400000 " + viewBoxHeight,
       "preserveAspectRatio": "xMinYMin slice"
     });
-    return buildCommon.makeSvgSpan(["hide-tail"], [svg2], options2);
+    return makeSvgSpan(["hide-tail"], [svg2], options2);
   };
   var makeSqrtImage = function makeSqrtImage2(height, options2) {
     var newOptions = options2.havingBaseSizing();
@@ -22431,9 +22448,9 @@ ${config2.themeCSS}`;
       ruleWidth: (options2.fontMetrics().sqrtRuleThickness + extraVinculum) * sizeMultiplier
     };
   };
-  var stackLargeDelimiters = ["(", "\\lparen", ")", "\\rparen", "[", "\\lbrack", "]", "\\rbrack", "\\{", "\\lbrace", "\\}", "\\rbrace", "\\lfloor", "\\rfloor", "⌊", "⌋", "\\lceil", "\\rceil", "⌈", "⌉", "\\surd"];
-  var stackAlwaysDelimiters = ["\\uparrow", "\\downarrow", "\\updownarrow", "\\Uparrow", "\\Downarrow", "\\Updownarrow", "|", "\\|", "\\vert", "\\Vert", "\\lvert", "\\rvert", "\\lVert", "\\rVert", "\\lgroup", "\\rgroup", "⟮", "⟯", "\\lmoustache", "\\rmoustache", "⎰", "⎱"];
-  var stackNeverDelimiters = ["<", ">", "\\langle", "\\rangle", "/", "\\backslash", "\\lt", "\\gt"];
+  var stackLargeDelimiters = /* @__PURE__ */ new Set(["(", "\\lparen", ")", "\\rparen", "[", "\\lbrack", "]", "\\rbrack", "\\{", "\\lbrace", "\\}", "\\rbrace", "\\lfloor", "\\rfloor", "⌊", "⌋", "\\lceil", "\\rceil", "⌈", "⌉", "\\surd"]);
+  var stackAlwaysDelimiters = /* @__PURE__ */ new Set(["\\uparrow", "\\downarrow", "\\updownarrow", "\\Uparrow", "\\Downarrow", "\\Updownarrow", "|", "\\|", "\\vert", "\\Vert", "\\lvert", "\\rvert", "\\lVert", "\\rVert", "\\lgroup", "\\rgroup", "⟮", "⟯", "\\lmoustache", "\\rmoustache", "⎰", "⎱"]);
+  var stackNeverDelimiters = /* @__PURE__ */ new Set(["<", ">", "\\langle", "\\rangle", "/", "\\backslash", "\\lt", "\\gt"]);
   var sizeToMaxHeight = [0, 1.2, 1.8, 2.4, 3];
   var makeSizedDelim = function makeSizedDelim2(delim, size2, options2, mode, classes2) {
     if (delim === "<" || delim === "\\lt" || delim === "⟨") {
@@ -22441,9 +22458,9 @@ ${config2.themeCSS}`;
     } else if (delim === ">" || delim === "\\gt" || delim === "⟩") {
       delim = "\\rangle";
     }
-    if (utils.contains(stackLargeDelimiters, delim) || utils.contains(stackNeverDelimiters, delim)) {
+    if (stackLargeDelimiters.has(delim) || stackNeverDelimiters.has(delim)) {
       return makeLargeDelim(delim, size2, false, options2, mode, classes2);
-    } else if (utils.contains(stackAlwaysDelimiters, delim)) {
+    } else if (stackAlwaysDelimiters.has(delim)) {
       return makeStackedDelim(delim, sizeToMaxHeight[size2], false, options2, mode, classes2);
     } else {
       throw new ParseError("Illegal delimiter: '" + delim + "'");
@@ -22515,23 +22532,25 @@ ${config2.themeCSS}`;
     } else if (type2.type === "stack") {
       return "Size4-Regular";
     } else {
-      throw new Error("Add support for delim type '" + type2.type + "' here.");
+      var delimKind = type2.type;
+      throw new Error("Add support for delim type '" + delimKind + "' here.");
     }
   };
   var traverseSequence = function traverseSequence2(delim, height, sequence2, options2) {
     var start2 = Math.min(2, 3 - options2.style.size);
     for (var i2 = start2; i2 < sequence2.length; i2++) {
-      if (sequence2[i2].type === "stack") {
+      var delimType = sequence2[i2];
+      if (delimType.type === "stack") {
         break;
       }
-      var metrics = getMetrics(delim, delimTypeToFont(sequence2[i2]), "math");
+      var metrics = getMetrics(delim, delimTypeToFont(delimType), "math");
       var heightDepth = metrics.height + metrics.depth;
-      if (sequence2[i2].type === "small") {
-        var newOptions = options2.havingBaseStyle(sequence2[i2].style);
+      if (delimType.type === "small") {
+        var newOptions = options2.havingBaseStyle(delimType.style);
         heightDepth *= newOptions.sizeMultiplier;
       }
       if (heightDepth > height) {
-        return sequence2[i2];
+        return delimType;
       }
     }
     return sequence2[sequence2.length - 1];
@@ -22543,9 +22562,9 @@ ${config2.themeCSS}`;
       delim = "\\rangle";
     }
     var sequence2;
-    if (utils.contains(stackNeverDelimiters, delim)) {
+    if (stackNeverDelimiters.has(delim)) {
       sequence2 = stackNeverDelimiterSequence;
-    } else if (utils.contains(stackLargeDelimiters, delim)) {
+    } else if (stackLargeDelimiters.has(delim)) {
       sequence2 = stackLargeDelimiterSequence;
     } else {
       sequence2 = stackAlwaysDelimiterSequence;
@@ -22578,13 +22597,6 @@ ${config2.themeCSS}`;
       2 * maxDistFromAxis - delimiterExtend
     );
     return makeCustomSizedDelim(delim, totalHeight, true, options2, mode, classes2);
-  };
-  var delimiter = {
-    sqrtImage: makeSqrtImage,
-    sizedDelim: makeSizedDelim,
-    sizeToMaxHeight,
-    customSizedDelim: makeCustomSizedDelim,
-    leftRightDelim: makeLeftRightDelim
   };
   var delimiterSizes = {
     "\\bigl": {
@@ -22652,10 +22664,10 @@ ${config2.themeCSS}`;
       size: 4
     }
   };
-  var delimiters = ["(", "\\lparen", ")", "\\rparen", "[", "\\lbrack", "]", "\\rbrack", "\\{", "\\lbrace", "\\}", "\\rbrace", "\\lfloor", "\\rfloor", "⌊", "⌋", "\\lceil", "\\rceil", "⌈", "⌉", "<", ">", "\\langle", "⟨", "\\rangle", "⟩", "\\lt", "\\gt", "\\lvert", "\\rvert", "\\lVert", "\\rVert", "\\lgroup", "\\rgroup", "⟮", "⟯", "\\lmoustache", "\\rmoustache", "⎰", "⎱", "/", "\\backslash", "|", "\\vert", "\\|", "\\Vert", "\\uparrow", "\\Uparrow", "\\downarrow", "\\Downarrow", "\\updownarrow", "\\Updownarrow", "."];
+  var delimiters = /* @__PURE__ */ new Set(["(", "\\lparen", ")", "\\rparen", "[", "\\lbrack", "]", "\\rbrack", "\\{", "\\lbrace", "\\}", "\\rbrace", "\\lfloor", "\\rfloor", "⌊", "⌋", "\\lceil", "\\rceil", "⌈", "⌉", "<", ">", "\\langle", "⟨", "\\rangle", "⟩", "\\lt", "\\gt", "\\lvert", "\\rvert", "\\lVert", "\\rVert", "\\lgroup", "\\rgroup", "⟮", "⟯", "\\lmoustache", "\\rmoustache", "⎰", "⎱", "/", "\\backslash", "|", "\\vert", "\\|", "\\Vert", "\\uparrow", "\\Uparrow", "\\downarrow", "\\Downarrow", "\\updownarrow", "\\Updownarrow", "."]);
   function checkDelimiter(delim, context) {
     var symDelim = checkSymbolNodeType(delim);
-    if (symDelim && utils.contains(delimiters, symDelim.text)) {
+    if (symDelim && delimiters.has(symDelim.text)) {
       return symDelim;
     } else if (symDelim) {
       throw new ParseError("Invalid delimiter '" + symDelim.text + "' after '" + context.funcName + "'", delim);
@@ -22682,23 +22694,23 @@ ${config2.themeCSS}`;
     },
     htmlBuilder: (group, options2) => {
       if (group.delim === ".") {
-        return buildCommon.makeSpan([group.mclass]);
+        return makeSpan([group.mclass]);
       }
-      return delimiter.sizedDelim(group.delim, group.size, options2, group.mode, [group.mclass]);
+      return makeSizedDelim(group.delim, group.size, options2, group.mode, [group.mclass]);
     },
     mathmlBuilder: (group) => {
       var children2 = [];
       if (group.delim !== ".") {
         children2.push(makeText(group.delim, group.mode));
       }
-      var node2 = new mathMLTree.MathNode("mo", children2);
+      var node2 = new MathNode("mo", children2);
       if (group.mclass === "mopen" || group.mclass === "mclose") {
         node2.setAttribute("fence", "true");
       } else {
         node2.setAttribute("fence", "false");
       }
       node2.setAttribute("stretchy", "true");
-      var size2 = makeEm(delimiter.sizeToMaxHeight[group.size]);
+      var size2 = makeEm(sizeToMaxHeight[group.size]);
       node2.setAttribute("minsize", size2);
       node2.setAttribute("maxsize", size2);
       return node2;
@@ -22774,7 +22786,7 @@ ${config2.themeCSS}`;
       if (group.left === ".") {
         leftDelim = makeNullDelimiter(options2, ["mopen"]);
       } else {
-        leftDelim = delimiter.leftRightDelim(group.left, innerHeight, innerDepth, options2, group.mode, ["mopen"]);
+        leftDelim = makeLeftRightDelim(group.left, innerHeight, innerDepth, options2, group.mode, ["mopen"]);
       }
       inner2.unshift(leftDelim);
       if (hadMiddle) {
@@ -22782,7 +22794,7 @@ ${config2.themeCSS}`;
           var middleDelim = inner2[_i6];
           var isMiddle = middleDelim.isMiddle;
           if (isMiddle) {
-            inner2[_i6] = delimiter.leftRightDelim(isMiddle.delim, innerHeight, innerDepth, isMiddle.options, group.mode, []);
+            inner2[_i6] = makeLeftRightDelim(isMiddle.delim, innerHeight, innerDepth, isMiddle.options, group.mode, []);
           }
         }
       }
@@ -22791,21 +22803,21 @@ ${config2.themeCSS}`;
         rightDelim = makeNullDelimiter(options2, ["mclose"]);
       } else {
         var colorOptions = group.rightColor ? options2.withColor(group.rightColor) : options2;
-        rightDelim = delimiter.leftRightDelim(group.right, innerHeight, innerDepth, colorOptions, group.mode, ["mclose"]);
+        rightDelim = makeLeftRightDelim(group.right, innerHeight, innerDepth, colorOptions, group.mode, ["mclose"]);
       }
       inner2.push(rightDelim);
-      return buildCommon.makeSpan(["minner"], inner2, options2);
+      return makeSpan(["minner"], inner2, options2);
     },
     mathmlBuilder: (group, options2) => {
       assertParsed(group);
       var inner2 = buildExpression(group.body, options2);
       if (group.left !== ".") {
-        var leftNode = new mathMLTree.MathNode("mo", [makeText(group.left, group.mode)]);
+        var leftNode = new MathNode("mo", [makeText(group.left, group.mode)]);
         leftNode.setAttribute("fence", "true");
         inner2.unshift(leftNode);
       }
       if (group.right !== ".") {
-        var rightNode = new mathMLTree.MathNode("mo", [makeText(group.right, group.mode)]);
+        var rightNode = new MathNode("mo", [makeText(group.right, group.mode)]);
         rightNode.setAttribute("fence", "true");
         if (group.rightColor) {
           rightNode.setAttribute("mathcolor", group.rightColor);
@@ -22838,7 +22850,7 @@ ${config2.themeCSS}`;
       if (group.delim === ".") {
         middleDelim = makeNullDelimiter(options2, []);
       } else {
-        middleDelim = delimiter.sizedDelim(group.delim, 1, options2, group.mode, []);
+        middleDelim = makeSizedDelim(group.delim, 1, options2, group.mode, []);
         var isMiddle = {
           delim: group.delim,
           options: options2
@@ -22849,7 +22861,7 @@ ${config2.themeCSS}`;
     },
     mathmlBuilder: (group, options2) => {
       var textNode = group.delim === "\\vert" || group.delim === "|" ? makeText("|", "text") : makeText(group.delim, group.mode);
-      var middleNode = new mathMLTree.MathNode("mo", [textNode]);
+      var middleNode = new MathNode("mo", [textNode]);
       middleNode.setAttribute("fence", "true");
       middleNode.setAttribute("lspace", "0.05em");
       middleNode.setAttribute("rspace", "0.05em");
@@ -22857,14 +22869,14 @@ ${config2.themeCSS}`;
     }
   });
   var htmlBuilder$7 = (group, options2) => {
-    var inner2 = buildCommon.wrapFragment(buildGroup$1(group.body, options2), options2);
+    var inner2 = wrapFragment(buildGroup$1(group.body, options2), options2);
     var label = group.label.slice(1);
     var scale = options2.sizeMultiplier;
     var img;
     var imgShift = 0;
-    var isSingleChar = utils.isCharacterBox(group.body);
+    var isSingleChar = isCharacterBox(group.body);
     if (label === "sout") {
-      img = buildCommon.makeSpan(["stretchy", "sout"]);
+      img = makeSpan(["stretchy", "sout"]);
       img.height = options2.fontMetrics().defaultRuleThickness / scale;
       imgShift = -0.5 * options2.fontMetrics().xHeight;
     } else if (label === "phase") {
@@ -22888,7 +22900,7 @@ ${config2.themeCSS}`;
         "viewBox": "0 0 400000 " + viewBoxHeight,
         "preserveAspectRatio": "xMinYMin slice"
       });
-      img = buildCommon.makeSvgSpan(["hide-tail"], [svgNode2], options2);
+      img = makeSvgSpan(["hide-tail"], [svgNode2], options2);
       img.style.height = makeEm(angleHeight);
       imgShift = inner2.depth + lineWeight + clearance;
     } else {
@@ -22909,7 +22921,6 @@ ${config2.themeCSS}`;
           options2.fontMetrics().fboxrule,
           // default
           options2.minRuleThickness
-          // User override.
         );
         topPad = options2.fontMetrics().fboxsep + (label === "colorbox" ? 0 : ruleThickness);
         bottomPad = topPad;
@@ -22921,7 +22932,7 @@ ${config2.themeCSS}`;
         topPad = isSingleChar ? 0.2 : 0;
         bottomPad = topPad;
       }
-      img = stretchy.encloseSpan(inner2, label, topPad, bottomPad, options2);
+      img = stretchyEnclose(inner2, label, topPad, bottomPad, options2);
       if (/fbox|boxed|fcolorbox/.test(label)) {
         img.style.borderStyle = "solid";
         img.style.borderWidth = makeEm(ruleThickness);
@@ -22939,7 +22950,7 @@ ${config2.themeCSS}`;
     }
     var vlist;
     if (group.backgroundColor) {
-      vlist = buildCommon.makeVList({
+      vlist = makeVList({
         positionType: "individualShift",
         children: [
           // Put the color background behind inner;
@@ -22954,10 +22965,10 @@ ${config2.themeCSS}`;
             shift: 0
           }
         ]
-      }, options2);
+      });
     } else {
       var classes2 = /cancel|phase/.test(label) ? ["svg-align"] : [];
-      vlist = buildCommon.makeVList({
+      vlist = makeVList({
         positionType: "individualShift",
         children: [
           // Write the \cancel stroke on top of inner.
@@ -22973,21 +22984,21 @@ ${config2.themeCSS}`;
             wrapperClasses: classes2
           }
         ]
-      }, options2);
+      });
     }
     if (/cancel/.test(label)) {
       vlist.height = inner2.height;
       vlist.depth = inner2.depth;
     }
     if (/cancel/.test(label) && !isSingleChar) {
-      return buildCommon.makeSpan(["mord", "cancel-lap"], [vlist], options2);
+      return makeSpan(["mord", "cancel-lap"], [vlist], options2);
     } else {
-      return buildCommon.makeSpan(["mord"], [vlist], options2);
+      return makeSpan(["mord"], [vlist], options2);
     }
   };
   var mathmlBuilder$6 = (group, options2) => {
     var fboxsep = 0;
-    var node2 = new mathMLTree.MathNode(group.label.indexOf("colorbox") > -1 ? "mpadded" : "menclose", [buildGroup(group.body, options2)]);
+    var node2 = new MathNode(group.label.includes("colorbox") ? "mpadded" : "menclose", [buildGroup(group.body, options2)]);
     switch (group.label) {
       case "\\cancel":
         node2.setAttribute("notation", "updiagonalstrike");
@@ -23019,9 +23030,8 @@ ${config2.themeCSS}`;
             options2.fontMetrics().fboxrule,
             // default
             options2.minRuleThickness
-            // user override
           );
-          node2.setAttribute("style", "border: " + thk + "em solid " + String(group.borderColor));
+          node2.setAttribute("style", "border: " + makeEm(thk) + " solid " + group.borderColor);
         }
         break;
       case "\\xcancel":
@@ -23109,7 +23119,7 @@ ${config2.themeCSS}`;
   });
   defineFunction({
     type: "enclose",
-    names: ["\\cancel", "\\bcancel", "\\xcancel", "\\sout", "\\phase"],
+    names: ["\\cancel", "\\bcancel", "\\xcancel", "\\phase"],
     props: {
       numArgs: 1
     },
@@ -23131,16 +23141,42 @@ ${config2.themeCSS}`;
   });
   defineFunction({
     type: "enclose",
+    names: ["\\sout"],
+    props: {
+      numArgs: 1,
+      allowedInText: true
+    },
+    handler(_ref5, args) {
+      var {
+        parser: parser2,
+        funcName
+      } = _ref5;
+      if (parser2.mode === "math") {
+        parser2.settings.reportNonstrict("mathVsSout", "LaTeX's \\sout works only in text mode");
+      }
+      var body = args[0];
+      return {
+        type: "enclose",
+        mode: parser2.mode,
+        label: funcName,
+        body
+      };
+    },
+    htmlBuilder: htmlBuilder$7,
+    mathmlBuilder: mathmlBuilder$6
+  });
+  defineFunction({
+    type: "enclose",
     names: ["\\angl"],
     props: {
       numArgs: 1,
       argTypes: ["hbox"],
       allowedInText: false
     },
-    handler(_ref5, args) {
+    handler(_ref6, args) {
       var {
         parser: parser2
-      } = _ref5;
+      } = _ref6;
       return {
         type: "enclose",
         mode: parser2.mode,
@@ -23180,6 +23216,49 @@ ${config2.themeCSS}`;
   function defineMacro(name, body) {
     _macros[name] = body;
   }
+  class SourceLocation {
+    // The + prefix indicates that these fields aren't writeable
+    // Lexer holding the input string.
+    // Start offset, zero-based inclusive.
+    // End offset, zero-based exclusive.
+    constructor(lexer, start2, end2) {
+      this.lexer = lexer;
+      this.start = start2;
+      this.end = end2;
+    }
+    /**
+     * Merges two `SourceLocation`s from location providers, given they are
+     * provided in order of appearance.
+     * - Returns the first one's location if only the first is provided.
+     * - Returns a merged range of the first and the last if both are provided
+     *   and their lexers match.
+     * - Otherwise, returns null.
+     */
+    static range(first, second2) {
+      if (!second2) {
+        return first && first.loc;
+      } else if (!first || !first.loc || !second2.loc || first.loc.lexer !== second2.loc.lexer) {
+        return null;
+      } else {
+        return new SourceLocation(first.loc.lexer, first.loc.start, second2.loc.end);
+      }
+    }
+  }
+  class Token {
+    // don't expand the token
+    // used in \noexpand
+    constructor(text2, loc) {
+      this.text = text2;
+      this.loc = loc;
+    }
+    /**
+     * Given a pair of tokens (this and endToken), compute a `Token` encompassing
+     * the whole input range enclosed by these two.
+     */
+    range(endToken, text2) {
+      return new Token(text2, SourceLocation.range(this, endToken));
+    }
+  }
   function getHLines(parser2) {
     var hlineInfo = [];
     parser2.consumeSpaces();
@@ -23203,9 +23282,10 @@ ${config2.themeCSS}`;
       throw new ParseError("{" + context.envName + "} can be used only in display mode.");
     }
   };
+  var gatherEnvironments = /* @__PURE__ */ new Set(["gather", "gather*"]);
   function getAutoTag(name) {
-    if (name.indexOf("ed") === -1) {
-      return name.indexOf("*") === -1;
+    if (!name.includes("ed")) {
+      return !name.includes("*");
     }
   }
   function parseArray(parser2, _ref, style) {
@@ -23260,13 +23340,13 @@ ${config2.themeCSS}`;
     beginRow();
     hLinesBeforeRow.push(getHLines(parser2));
     while (true) {
-      var cell = parser2.parseExpression(false, singleRow ? "\\end" : "\\\\");
+      var cellBody = parser2.parseExpression(false, singleRow ? "\\end" : "\\\\");
       parser2.gullet.endGroup();
       parser2.gullet.beginGroup();
-      cell = {
+      var cell = {
         type: "ordgroup",
         mode: parser2.mode,
-        body: cell
+        body: cellBody
       };
       if (style) {
         cell = {
@@ -23289,7 +23369,7 @@ ${config2.themeCSS}`;
         parser2.consume();
       } else if (next2 === "\\end") {
         endRow();
-        if (row.length === 1 && cell.type === "styling" && cell.body[0].body.length === 0 && (body.length > 1 || !emptySingleRow)) {
+        if (row.length === 1 && cell.type === "styling" && cell.body.length === 1 && cell.body[0].type === "ordgroup" && cell.body[0].body.length === 0 && (body.length > 1 || !emptySingleRow)) {
           body.pop();
         }
         if (hLinesBeforeRow.length < body.length + 1) {
@@ -23348,7 +23428,6 @@ ${config2.themeCSS}`;
       // From LaTeX \showthe\arrayrulewidth. Equals 0.04 em.
       options2.fontMetrics().arrayRuleWidth,
       options2.minRuleThickness
-      // User override.
     );
     var pt = 1 / options2.fontMetrics().ptPerEm;
     var arraycolsep = 5 * pt;
@@ -23407,7 +23486,7 @@ ${config2.themeCSS}`;
           gap = 0;
         }
       }
-      if (group.addJot) {
+      if (group.addJot && r < group.body.length - 1) {
         depth += jot;
       }
       outrow.height = height;
@@ -23431,11 +23510,11 @@ ${config2.themeCSS}`;
         var tag = group.tags[r];
         var tagSpan = void 0;
         if (tag === true) {
-          tagSpan = buildCommon.makeSpan(["eqn-num"], [], options2);
+          tagSpan = makeSpan(["eqn-num"], [], options2);
         } else if (tag === false) {
-          tagSpan = buildCommon.makeSpan([], [], options2);
+          tagSpan = makeSpan([], [], options2);
         } else {
-          tagSpan = buildCommon.makeSpan([], buildExpression$1(tag, options2, true), options2);
+          tagSpan = makeSpan([], buildExpression$1(tag, options2, true), options2);
         }
         tagSpan.depth = rw.depth;
         tagSpan.height = rw.height;
@@ -23453,17 +23532,19 @@ ${config2.themeCSS}`;
       c2 < nc || colDescrNum < colDescriptions.length;
       ++c2, ++colDescrNum
     ) {
-      var colDescr = colDescriptions[colDescrNum] || {};
+      var _colDescr3;
+      var colDescr = colDescriptions[colDescrNum];
       var firstSeparator = true;
-      while (colDescr.type === "separator") {
+      while (((_colDescr = colDescr) == null ? void 0 : _colDescr.type) === "separator") {
+        var _colDescr;
         if (!firstSeparator) {
-          colSep = buildCommon.makeSpan(["arraycolsep"], []);
+          colSep = makeSpan(["arraycolsep"], []);
           colSep.style.width = makeEm(options2.fontMetrics().doubleRuleSep);
           cols.push(colSep);
         }
         if (colDescr.separator === "|" || colDescr.separator === ":") {
           var lineType2 = colDescr.separator === "|" ? "solid" : "dashed";
-          var separator = buildCommon.makeSpan(["vertical-separator"], [], options2);
+          var separator = makeSpan(["vertical-separator"], [], options2);
           separator.style.height = makeEm(totalHeight);
           separator.style.borderRightWidth = makeEm(ruleThickness);
           separator.style.borderRightStyle = lineType2;
@@ -23477,7 +23558,7 @@ ${config2.themeCSS}`;
           throw new ParseError("Invalid separator type: " + colDescr.separator);
         }
         colDescrNum++;
-        colDescr = colDescriptions[colDescrNum] || {};
+        colDescr = colDescriptions[colDescrNum];
         firstSeparator = false;
       }
       if (c2 >= nc) {
@@ -23485,14 +23566,15 @@ ${config2.themeCSS}`;
       }
       var sepwidth = void 0;
       if (c2 > 0 || group.hskipBeforeAndAfter) {
-        sepwidth = utils.deflt(colDescr.pregap, arraycolsep);
+        var _colDescr$pregap, _colDescr2;
+        sepwidth = (_colDescr$pregap = (_colDescr2 = colDescr) == null ? void 0 : _colDescr2.pregap) != null ? _colDescr$pregap : arraycolsep;
         if (sepwidth !== 0) {
-          colSep = buildCommon.makeSpan(["arraycolsep"], []);
+          colSep = makeSpan(["arraycolsep"], []);
           colSep.style.width = makeEm(sepwidth);
           cols.push(colSep);
         }
       }
-      var col = [];
+      var colElems = [];
       for (r = 0; r < nr; ++r) {
         var row = body[r];
         var elem = row[c2];
@@ -23502,34 +23584,35 @@ ${config2.themeCSS}`;
         var _shift2 = row.pos - offset;
         elem.depth = row.depth;
         elem.height = row.height;
-        col.push({
+        colElems.push({
           type: "elem",
           elem,
           shift: _shift2
         });
       }
-      col = buildCommon.makeVList({
+      var colVList = makeVList({
         positionType: "individualShift",
-        children: col
-      }, options2);
-      col = buildCommon.makeSpan(["col-align-" + (colDescr.align || "c")], [col]);
-      cols.push(col);
+        children: colElems
+      });
+      var colSpan = makeSpan(["col-align-" + (((_colDescr3 = colDescr) == null ? void 0 : _colDescr3.align) || "c")], [colVList]);
+      cols.push(colSpan);
       if (c2 < nc - 1 || group.hskipBeforeAndAfter) {
-        sepwidth = utils.deflt(colDescr.postgap, arraycolsep);
+        var _colDescr$postgap, _colDescr4;
+        sepwidth = (_colDescr$postgap = (_colDescr4 = colDescr) == null ? void 0 : _colDescr4.postgap) != null ? _colDescr$postgap : arraycolsep;
         if (sepwidth !== 0) {
-          colSep = buildCommon.makeSpan(["arraycolsep"], []);
+          colSep = makeSpan(["arraycolsep"], []);
           colSep.style.width = makeEm(sepwidth);
           cols.push(colSep);
         }
       }
     }
-    body = buildCommon.makeSpan(["mtable"], cols);
+    var tableBody = makeSpan(["mtable"], cols);
     if (hlines.length > 0) {
-      var line2 = buildCommon.makeLineSpan("hline", options2, ruleThickness);
-      var dashes = buildCommon.makeLineSpan("hdashline", options2, ruleThickness);
+      var line2 = makeLineSpan("hline", options2, ruleThickness);
+      var dashes = makeLineSpan("hdashline", options2, ruleThickness);
       var vListElems = [{
         type: "elem",
-        elem: body,
+        elem: tableBody,
         shift: 0
       }];
       while (hlines.length > 0) {
@@ -23549,20 +23632,20 @@ ${config2.themeCSS}`;
           });
         }
       }
-      body = buildCommon.makeVList({
+      tableBody = makeVList({
         positionType: "individualShift",
         children: vListElems
-      }, options2);
+      });
     }
     if (tagSpans.length === 0) {
-      return buildCommon.makeSpan(["mord"], [body], options2);
+      return makeSpan(["mord"], [tableBody], options2);
     } else {
-      var eqnNumCol = buildCommon.makeVList({
+      var eqnNumCol = makeVList({
         positionType: "individualShift",
         children: tagSpans
-      }, options2);
-      eqnNumCol = buildCommon.makeSpan(["tag"], [eqnNumCol], options2);
-      return buildCommon.makeFragment([body, eqnNumCol]);
+      });
+      var tagCol = makeSpan(["tag"], [eqnNumCol], options2);
+      return makeFragment([tableBody, tagCol]);
     }
   };
   var alignMap = {
@@ -23572,13 +23655,13 @@ ${config2.themeCSS}`;
   };
   var mathmlBuilder$5 = function mathmlBuilder2(group, options2) {
     var tbl = [];
-    var glue = new mathMLTree.MathNode("mtd", [], ["mtr-glue"]);
-    var tag = new mathMLTree.MathNode("mtd", [], ["mml-eqn-num"]);
+    var glue = new MathNode("mtd", [], ["mtr-glue"]);
+    var tag = new MathNode("mtd", [], ["mml-eqn-num"]);
     for (var i2 = 0; i2 < group.body.length; i2++) {
       var rw = group.body[i2];
       var row = [];
       for (var j = 0; j < rw.length; j++) {
-        row.push(new mathMLTree.MathNode("mtd", [buildGroup(rw[j], options2)]));
+        row.push(new MathNode("mtd", [buildGroup(rw[j], options2)]));
       }
       if (group.tags && group.tags[i2]) {
         row.unshift(glue);
@@ -23589,9 +23672,9 @@ ${config2.themeCSS}`;
           row.push(tag);
         }
       }
-      tbl.push(new mathMLTree.MathNode("mtr", row));
+      tbl.push(new MathNode("mtr", row));
     }
-    var table = new mathMLTree.MathNode("mtable", tbl);
+    var table = new MathNode("mtable", tbl);
     var gap = group.arraystretch === 0.5 ? 0.1 : 0.16 + group.arraystretch - 1 + (group.addJot ? 0.09 : 0);
     table.setAttribute("rowspacing", makeEm(gap));
     var menclose = "";
@@ -23611,15 +23694,16 @@ ${config2.themeCSS}`;
         iEnd -= 1;
       }
       for (var _i6 = iStart; _i6 < iEnd; _i6++) {
-        if (cols[_i6].type === "align") {
-          align += alignMap[cols[_i6].align];
+        var col = cols[_i6];
+        if (col.type === "align") {
+          align += alignMap[col.align];
           if (prevTypeWasAlign) {
             columnLines += "none ";
           }
           prevTypeWasAlign = true;
-        } else if (cols[_i6].type === "separator") {
+        } else if (col.type === "separator") {
           if (prevTypeWasAlign) {
-            columnLines += cols[_i6].separator === "|" ? "solid " : "dashed ";
+            columnLines += col.separator === "|" ? "solid " : "dashed ";
             prevTypeWasAlign = false;
           }
         }
@@ -23656,21 +23740,21 @@ ${config2.themeCSS}`;
       table.setAttribute("rowlines", rowLines.trim());
     }
     if (menclose !== "") {
-      table = new mathMLTree.MathNode("menclose", [table]);
+      table = new MathNode("menclose", [table]);
       table.setAttribute("notation", menclose.trim());
     }
     if (group.arraystretch && group.arraystretch < 1) {
-      table = new mathMLTree.MathNode("mstyle", [table]);
+      table = new MathNode("mstyle", [table]);
       table.setAttribute("scriptlevel", "1");
     }
     return table;
   };
   var alignedHandler = function alignedHandler2(context, args) {
-    if (context.envName.indexOf("ed") === -1) {
+    if (!context.envName.includes("ed")) {
       validateAmsEnvironmentContext(context);
     }
     var cols = [];
-    var separationType = context.envName.indexOf("at") > -1 ? "alignat" : "align";
+    var separationType = context.envName.includes("at") ? "alignat" : "align";
     var isSplit = context.envName === "split";
     var res = parseArray(context.parser, {
       cols,
@@ -23681,7 +23765,7 @@ ${config2.themeCSS}`;
       maxNumCols: isSplit ? 2 : void 0,
       leqno: context.parser.settings.leqno
     }, "display");
-    var numMaths;
+    var numMaths = 0;
     var numCols = 0;
     var emptyGroup = {
       type: "ordgroup",
@@ -23743,7 +23827,7 @@ ${config2.themeCSS}`;
       var cols = colalign.map(function(nde) {
         var node2 = assertSymbolNodeType(nde);
         var ca = node2.text;
-        if ("lcr".indexOf(ca) !== -1) {
+        if ("lcr".includes(ca)) {
           return {
             type: "align",
             align: ca
@@ -23802,7 +23886,7 @@ ${config2.themeCSS}`;
           parser2.consume();
           parser2.consumeSpaces();
           colAlign = parser2.fetch().text;
-          if ("lcr".indexOf(colAlign) === -1) {
+          if (!"lcr".includes(colAlign)) {
             throw new ParseError("Expected l or c or r", parser2.nextToken);
           }
           parser2.consume();
@@ -23863,7 +23947,7 @@ ${config2.themeCSS}`;
       var cols = colalign.map(function(nde) {
         var node2 = assertSymbolNodeType(nde);
         var ca = node2.text;
-        if ("lc".indexOf(ca) !== -1) {
+        if ("lc".includes(ca)) {
           return {
             type: "align",
             align: ca
@@ -23874,12 +23958,12 @@ ${config2.themeCSS}`;
       if (cols.length > 1) {
         throw new ParseError("{subarray} can contain only one column");
       }
-      var res = {
+      var payload = {
         cols,
         hskipBeforeAndAfter: false,
         arraystretch: 0.5
       };
-      res = parseArray(context.parser, res, "script");
+      var res = parseArray(context.parser, payload, "script");
       if (res.body.length > 0 && res.body[0].length > 1) {
         throw new ParseError("{subarray} can contain only one column");
       }
@@ -23919,8 +24003,8 @@ ${config2.themeCSS}`;
         type: "leftright",
         mode: context.mode,
         body: [res],
-        left: context.envName.indexOf("r") > -1 ? "." : "\\{",
-        right: context.envName.indexOf("r") > -1 ? "\\}" : ".",
+        left: context.envName.includes("r") ? "." : "\\{",
+        right: context.envName.includes("r") ? "\\}" : ".",
         rightColor: void 0
       };
     },
@@ -23944,7 +24028,7 @@ ${config2.themeCSS}`;
       numArgs: 0
     },
     handler(context) {
-      if (utils.contains(["gather", "gather*"], context.envName)) {
+      if (gatherEnvironments.has(context.envName)) {
         validateAmsEnvironmentContext(context);
       }
       var res = {
@@ -24097,6 +24181,7 @@ ${config2.themeCSS}`;
       "\\mathit",
       "\\mathbf",
       "\\mathnormal",
+      "\\mathsfit",
       // families
       "\\mathbb",
       "\\mathcal",
@@ -24144,7 +24229,6 @@ ${config2.themeCSS}`;
         parser: parser2
       } = _ref2;
       var body = args[0];
-      var isCharacterBox2 = utils.isCharacterBox(body);
       return {
         type: "mclass",
         mode: parser2.mode,
@@ -24155,7 +24239,7 @@ ${config2.themeCSS}`;
           font: "boldsymbol",
           body
         }],
-        isCharacterBox: isCharacterBox2
+        isCharacterBox: isCharacterBox(body)
       };
     }
   });
@@ -24191,21 +24275,8 @@ ${config2.themeCSS}`;
     htmlBuilder: htmlBuilder$5,
     mathmlBuilder: mathmlBuilder$4
   });
-  var adjustStyle = (size2, originalStyle) => {
-    var style = originalStyle;
-    if (size2 === "display") {
-      style = style.id >= Style$1.SCRIPT.id ? style.text() : Style$1.DISPLAY;
-    } else if (size2 === "text" && style.size === Style$1.DISPLAY.size) {
-      style = Style$1.TEXT;
-    } else if (size2 === "script") {
-      style = Style$1.SCRIPT;
-    } else if (size2 === "scriptscript") {
-      style = Style$1.SCRIPTSCRIPT;
-    }
-    return style;
-  };
   var htmlBuilder$4 = (group, options2) => {
-    var style = adjustStyle(group.size, options2.style);
+    var style = options2.style;
     var nstyle = style.fracNum();
     var dstyle = style.fracDen();
     var newOptions;
@@ -24225,9 +24296,9 @@ ${config2.themeCSS}`;
     if (group.hasBarLine) {
       if (group.barSize) {
         ruleWidth = calculateSize(group.barSize, options2);
-        rule = buildCommon.makeLineSpan("frac-line", options2, ruleWidth);
+        rule = makeLineSpan("frac-line", options2, ruleWidth);
       } else {
-        rule = buildCommon.makeLineSpan("frac-line", options2);
+        rule = makeLineSpan("frac-line", options2);
       }
       ruleWidth = rule.height;
       ruleSpacing = rule.height;
@@ -24239,7 +24310,7 @@ ${config2.themeCSS}`;
     var numShift;
     var clearance;
     var denomShift;
-    if (style.size === Style$1.DISPLAY.size || group.size === "display") {
+    if (style.size === Style$1.DISPLAY.size) {
       numShift = options2.fontMetrics().num1;
       if (ruleWidth > 0) {
         clearance = 3 * ruleSpacing;
@@ -24264,7 +24335,7 @@ ${config2.themeCSS}`;
         numShift += 0.5 * (clearance - candidateClearance);
         denomShift += 0.5 * (clearance - candidateClearance);
       }
-      frac = buildCommon.makeVList({
+      frac = makeVList({
         positionType: "individualShift",
         children: [{
           type: "elem",
@@ -24275,7 +24346,7 @@ ${config2.themeCSS}`;
           elem: numerm,
           shift: -numShift
         }]
-      }, options2);
+      });
     } else {
       var axisHeight = options2.fontMetrics().axisHeight;
       if (numShift - numerm.depth - (axisHeight + 0.5 * ruleWidth) < clearance) {
@@ -24285,7 +24356,7 @@ ${config2.themeCSS}`;
         denomShift += clearance - (axisHeight - 0.5 * ruleWidth - (denomm.height - denomShift));
       }
       var midShift = -(axisHeight - 0.5 * ruleWidth);
-      frac = buildCommon.makeVList({
+      frac = makeVList({
         positionType: "individualShift",
         children: [{
           type: "elem",
@@ -24300,7 +24371,7 @@ ${config2.themeCSS}`;
           elem: numerm,
           shift: -numShift
         }]
-      }, options2);
+      });
     }
     newOptions = options2.havingStyle(style);
     frac.height *= newOptions.sizeMultiplier / options2.sizeMultiplier;
@@ -24318,42 +24389,35 @@ ${config2.themeCSS}`;
     if (group.leftDelim == null) {
       leftDelim = makeNullDelimiter(options2, ["mopen"]);
     } else {
-      leftDelim = delimiter.customSizedDelim(group.leftDelim, delimSize, true, options2.havingStyle(style), group.mode, ["mopen"]);
+      leftDelim = makeCustomSizedDelim(group.leftDelim, delimSize, true, options2.havingStyle(style), group.mode, ["mopen"]);
     }
     if (group.continued) {
-      rightDelim = buildCommon.makeSpan([]);
+      rightDelim = makeSpan([]);
     } else if (group.rightDelim == null) {
       rightDelim = makeNullDelimiter(options2, ["mclose"]);
     } else {
-      rightDelim = delimiter.customSizedDelim(group.rightDelim, delimSize, true, options2.havingStyle(style), group.mode, ["mclose"]);
+      rightDelim = makeCustomSizedDelim(group.rightDelim, delimSize, true, options2.havingStyle(style), group.mode, ["mclose"]);
     }
-    return buildCommon.makeSpan(["mord"].concat(newOptions.sizingClasses(options2)), [leftDelim, buildCommon.makeSpan(["mfrac"], [frac]), rightDelim], options2);
+    return makeSpan(["mord"].concat(newOptions.sizingClasses(options2)), [leftDelim, makeSpan(["mfrac"], [frac]), rightDelim], options2);
   };
   var mathmlBuilder$3 = (group, options2) => {
-    var node2 = new mathMLTree.MathNode("mfrac", [buildGroup(group.numer, options2), buildGroup(group.denom, options2)]);
+    var node2 = new MathNode("mfrac", [buildGroup(group.numer, options2), buildGroup(group.denom, options2)]);
     if (!group.hasBarLine) {
       node2.setAttribute("linethickness", "0px");
     } else if (group.barSize) {
       var ruleWidth = calculateSize(group.barSize, options2);
       node2.setAttribute("linethickness", makeEm(ruleWidth));
     }
-    var style = adjustStyle(group.size, options2.style);
-    if (style.size !== options2.style.size) {
-      node2 = new mathMLTree.MathNode("mstyle", [node2]);
-      var isDisplay = style.size === Style$1.DISPLAY.size ? "true" : "false";
-      node2.setAttribute("displaystyle", isDisplay);
-      node2.setAttribute("scriptlevel", "0");
-    }
     if (group.leftDelim != null || group.rightDelim != null) {
       var withDelims = [];
       if (group.leftDelim != null) {
-        var leftOp = new mathMLTree.MathNode("mo", [new mathMLTree.TextNode(group.leftDelim.replace("\\", ""))]);
+        var leftOp = new MathNode("mo", [new TextNode(group.leftDelim.replace("\\", ""))]);
         leftOp.setAttribute("fence", "true");
         withDelims.push(leftOp);
       }
       withDelims.push(node2);
       if (group.rightDelim != null) {
-        var rightOp = new mathMLTree.MathNode("mo", [new mathMLTree.TextNode(group.rightDelim.replace("\\", ""))]);
+        var rightOp = new MathNode("mo", [new TextNode(group.rightDelim.replace("\\", ""))]);
         rightOp.setAttribute("fence", "true");
         withDelims.push(rightOp);
       }
@@ -24361,9 +24425,22 @@ ${config2.themeCSS}`;
     }
     return node2;
   };
+  var wrapWithStyle = (frac, style) => {
+    if (!style) {
+      return frac;
+    }
+    var wrapper = {
+      type: "styling",
+      mode: frac.mode,
+      style,
+      body: [frac]
+    };
+    return wrapper;
+  };
   defineFunction({
     type: "genfrac",
     names: [
+      "\\cfrac",
       "\\dfrac",
       "\\frac",
       "\\tfrac",
@@ -24390,8 +24467,8 @@ ${config2.themeCSS}`;
       var hasBarLine;
       var leftDelim = null;
       var rightDelim = null;
-      var size2 = "auto";
       switch (funcName) {
+        case "\\cfrac":
         case "\\dfrac":
         case "\\frac":
         case "\\tfrac":
@@ -24420,58 +24497,27 @@ ${config2.themeCSS}`;
         default:
           throw new Error("Unrecognized genfrac command");
       }
-      switch (funcName) {
-        case "\\dfrac":
-        case "\\dbinom":
-          size2 = "display";
-          break;
-        case "\\tfrac":
-        case "\\tbinom":
-          size2 = "text";
-          break;
+      var continued = funcName === "\\cfrac";
+      var style = null;
+      if (continued || funcName.startsWith("\\d")) {
+        style = "display";
+      } else if (funcName.startsWith("\\t")) {
+        style = "text";
       }
-      return {
+      return wrapWithStyle({
         type: "genfrac",
         mode: parser2.mode,
-        continued: false,
         numer,
         denom,
+        continued,
         hasBarLine,
         leftDelim,
         rightDelim,
-        size: size2,
         barSize: null
-      };
+      }, style);
     },
     htmlBuilder: htmlBuilder$4,
     mathmlBuilder: mathmlBuilder$3
-  });
-  defineFunction({
-    type: "genfrac",
-    names: ["\\cfrac"],
-    props: {
-      numArgs: 2
-    },
-    handler: (_ref2, args) => {
-      var {
-        parser: parser2,
-        funcName
-      } = _ref2;
-      var numer = args[0];
-      var denom = args[1];
-      return {
-        type: "genfrac",
-        mode: parser2.mode,
-        continued: true,
-        numer,
-        denom,
-        hasBarLine: true,
-        leftDelim: null,
-        rightDelim: null,
-        size: "display",
-        barSize: null
-      };
-    }
   });
   defineFunction({
     type: "infix",
@@ -24480,12 +24526,12 @@ ${config2.themeCSS}`;
       numArgs: 0,
       infix: true
     },
-    handler(_ref3) {
+    handler(_ref2) {
       var {
         parser: parser2,
         funcName,
         token: token2
-      } = _ref3;
+      } = _ref2;
       var replaceWith;
       switch (funcName) {
         case "\\over":
@@ -24531,10 +24577,10 @@ ${config2.themeCSS}`;
       allowedInArgument: true,
       argTypes: ["math", "math", "size", "text", "math", "math"]
     },
-    handler(_ref4, args) {
+    handler(_ref3, args) {
       var {
         parser: parser2
-      } = _ref4;
+      } = _ref3;
       var numer = args[4];
       var denom = args[5];
       var leftNode = normalizeArgument(args[0]);
@@ -24550,7 +24596,7 @@ ${config2.themeCSS}`;
         barSize = barNode.value;
         hasBarLine = barSize.number > 0;
       }
-      var size2 = "auto";
+      var size2 = null;
       var styl = args[3];
       if (styl.type === "ordgroup") {
         if (styl.body.length > 0) {
@@ -24561,7 +24607,7 @@ ${config2.themeCSS}`;
         styl = assertNodeType(styl, "textord");
         size2 = stylArray[Number(styl.text)];
       }
-      return {
+      return wrapWithStyle({
         type: "genfrac",
         mode: parser2.mode,
         numer,
@@ -24570,12 +24616,9 @@ ${config2.themeCSS}`;
         hasBarLine,
         barSize,
         leftDelim,
-        rightDelim,
-        size: size2
-      };
-    },
-    htmlBuilder: htmlBuilder$4,
-    mathmlBuilder: mathmlBuilder$3
+        rightDelim
+      }, size2);
+    }
   });
   defineFunction({
     type: "infix",
@@ -24585,12 +24628,12 @@ ${config2.themeCSS}`;
       argTypes: ["size"],
       infix: true
     },
-    handler(_ref5, args) {
+    handler(_ref4, args) {
       var {
         parser: parser2,
         funcName,
         token: token2
-      } = _ref5;
+      } = _ref4;
       return {
         type: "infix",
         mode: parser2.mode,
@@ -24607,13 +24650,16 @@ ${config2.themeCSS}`;
       numArgs: 3,
       argTypes: ["math", "size", "math"]
     },
-    handler: (_ref6, args) => {
+    handler: (_ref5, args) => {
       var {
         parser: parser2,
         funcName
-      } = _ref6;
+      } = _ref5;
       var numer = args[0];
-      var barSize = assert(assertNodeType(args[1], "infix").size);
+      var barSize = assertNodeType(args[1], "infix").size;
+      if (!barSize) {
+        throw new Error("\\\\abovefrac expected size, but got " + String(barSize));
+      }
       var denom = args[2];
       var hasBarLine = barSize.number > 0;
       return {
@@ -24625,12 +24671,9 @@ ${config2.themeCSS}`;
         hasBarLine,
         barSize,
         leftDelim: null,
-        rightDelim: null,
-        size: "auto"
+        rightDelim: null
       };
-    },
-    htmlBuilder: htmlBuilder$4,
-    mathmlBuilder: mathmlBuilder$3
+    }
   });
   var htmlBuilder$3 = (grp, options2) => {
     var style = options2.style;
@@ -24643,10 +24686,10 @@ ${config2.themeCSS}`;
       group = assertNodeType(grp, "horizBrace");
     }
     var body = buildGroup$1(group.base, options2.havingBaseStyle(Style$1.DISPLAY));
-    var braceBody = stretchy.svgSpan(group, options2);
+    var braceBody = stretchySvg(group, options2);
     var vlist;
     if (group.isOver) {
-      vlist = buildCommon.makeVList({
+      vlist = makeVList({
         positionType: "firstBaseline",
         children: [{
           type: "elem",
@@ -24658,10 +24701,10 @@ ${config2.themeCSS}`;
           type: "elem",
           elem: braceBody
         }]
-      }, options2);
+      });
       vlist.children[0].children[0].children[1].classes.push("svg-align");
     } else {
-      vlist = buildCommon.makeVList({
+      vlist = makeVList({
         positionType: "bottom",
         positionData: body.depth + 0.1 + braceBody.height,
         children: [{
@@ -24674,13 +24717,13 @@ ${config2.themeCSS}`;
           type: "elem",
           elem: body
         }]
-      }, options2);
+      });
       vlist.children[0].children[0].children[0].classes.push("svg-align");
     }
     if (supSubGroup) {
-      var vSpan = buildCommon.makeSpan(["mord", group.isOver ? "mover" : "munder"], [vlist], options2);
+      var vSpan = makeSpan(["minner", group.isOver ? "mover" : "munder"], [vlist], options2);
       if (group.isOver) {
-        vlist = buildCommon.makeVList({
+        vlist = makeVList({
           positionType: "firstBaseline",
           children: [{
             type: "elem",
@@ -24692,9 +24735,9 @@ ${config2.themeCSS}`;
             type: "elem",
             elem: supSubGroup
           }]
-        }, options2);
+        });
       } else {
-        vlist = buildCommon.makeVList({
+        vlist = makeVList({
           positionType: "bottom",
           positionData: vSpan.depth + 0.2 + supSubGroup.height + supSubGroup.depth,
           children: [{
@@ -24707,18 +24750,18 @@ ${config2.themeCSS}`;
             type: "elem",
             elem: vSpan
           }]
-        }, options2);
+        });
       }
     }
-    return buildCommon.makeSpan(["mord", group.isOver ? "mover" : "munder"], [vlist], options2);
+    return makeSpan(["minner", group.isOver ? "mover" : "munder"], [vlist], options2);
   };
   var mathmlBuilder$2 = (group, options2) => {
-    var accentNode = stretchy.mathMLnode(group.label);
-    return new mathMLTree.MathNode(group.isOver ? "mover" : "munder", [buildGroup(group.base, options2), accentNode]);
+    var accentNode = stretchyMathML(group.label);
+    return new MathNode(group.isOver ? "mover" : "munder", [buildGroup(group.base, options2), accentNode]);
   };
   defineFunction({
     type: "horizBrace",
-    names: ["\\overbrace", "\\underbrace"],
+    names: ["\\overbrace", "\\underbrace", "\\overbracket", "\\underbracket"],
     props: {
       numArgs: 1
     },
@@ -24731,7 +24774,7 @@ ${config2.themeCSS}`;
         type: "horizBrace",
         mode: parser2.mode,
         label: funcName,
-        isOver: /^\\over/.test(funcName),
+        isOver: funcName.includes("\\over"),
         base: args[0]
       };
     },
@@ -24767,7 +24810,7 @@ ${config2.themeCSS}`;
     },
     htmlBuilder: (group, options2) => {
       var elements2 = buildExpression$1(group.body, options2, false);
-      return buildCommon.makeAnchor(group.href, [], elements2, options2);
+      return makeAnchor(group.href, [], elements2, options2);
     },
     mathmlBuilder: (group, options2) => {
       var math2 = buildExpressionRow(group.body, options2);
@@ -24844,10 +24887,10 @@ ${config2.themeCSS}`;
     },
     htmlBuilder(group, options2) {
       var elements2 = buildExpression$1(group.body, options2, false);
-      return buildCommon.makeFragment(elements2);
+      return makeFragment(elements2);
     },
     mathmlBuilder(group, options2) {
-      return new mathMLTree.MathNode("mrow", buildExpression(group.body, options2));
+      return new MathNode("mrow", buildExpression(group.body, options2));
     }
   });
   defineFunction({
@@ -24896,11 +24939,14 @@ ${config2.themeCSS}`;
         case "\\htmlData": {
           var data = value2.split(",");
           for (var i2 = 0; i2 < data.length; i2++) {
-            var keyVal = data[i2].split("=");
-            if (keyVal.length !== 2) {
-              throw new ParseError("Error parsing key-value for \\htmlData");
+            var item = data[i2];
+            var firstEquals = item.indexOf("=");
+            if (firstEquals < 0) {
+              throw new ParseError("\\htmlData key/value '" + item + "' missing equals sign");
             }
-            attributes["data-" + keyVal[0].trim()] = keyVal[1].trim();
+            var key = item.slice(0, firstEquals);
+            var _value = item.slice(firstEquals + 1);
+            attributes["data-" + key.trim()] = _value;
           }
           trustContext = {
             command: "\\htmlData",
@@ -24927,7 +24973,7 @@ ${config2.themeCSS}`;
       if (group.attributes.class) {
         classes2.push(...group.attributes.class.trim().split(/\s+/));
       }
-      var span = buildCommon.makeSpan(classes2, elements2, options2);
+      var span = makeSpan(classes2, elements2, options2);
       for (var attr in group.attributes) {
         if (attr !== "class" && group.attributes.hasOwnProperty(attr)) {
           span.setAttribute(attr, group.attributes[attr]);
@@ -24944,6 +24990,7 @@ ${config2.themeCSS}`;
     names: ["\\html@mathml"],
     props: {
       numArgs: 2,
+      allowedInArgument: true,
       allowedInText: true
     },
     handler: (_ref, args) => {
@@ -24959,7 +25006,7 @@ ${config2.themeCSS}`;
     },
     htmlBuilder: (group, options2) => {
       var elements2 = buildExpression$1(group.html, options2, false);
-      return buildCommon.makeFragment(elements2);
+      return makeFragment(elements2);
     },
     mathmlBuilder: (group, options2) => {
       return buildExpressionRow(group.mathml, options2);
@@ -25086,7 +25133,7 @@ ${config2.themeCSS}`;
       return node2;
     },
     mathmlBuilder: (group, options2) => {
-      var node2 = new mathMLTree.MathNode("mglyph", []);
+      var node2 = new MathNode("mglyph", []);
       node2.setAttribute("alt", group.alt);
       var height = calculateSize(group.height, options2);
       var depth = 0;
@@ -25141,11 +25188,11 @@ ${config2.themeCSS}`;
       };
     },
     htmlBuilder(group, options2) {
-      return buildCommon.makeGlue(group.dimension, options2);
+      return makeGlue(group.dimension, options2);
     },
     mathmlBuilder(group, options2) {
       var dimension = calculateSize(group.dimension, options2);
-      return new mathMLTree.SpaceNode(dimension);
+      return new SpaceNode(dimension);
     }
   });
   defineFunction({
@@ -25171,24 +25218,24 @@ ${config2.themeCSS}`;
     htmlBuilder: (group, options2) => {
       var inner2;
       if (group.alignment === "clap") {
-        inner2 = buildCommon.makeSpan([], [buildGroup$1(group.body, options2)]);
-        inner2 = buildCommon.makeSpan(["inner"], [inner2], options2);
+        inner2 = makeSpan([], [buildGroup$1(group.body, options2)]);
+        inner2 = makeSpan(["inner"], [inner2], options2);
       } else {
-        inner2 = buildCommon.makeSpan(["inner"], [buildGroup$1(group.body, options2)]);
+        inner2 = makeSpan(["inner"], [buildGroup$1(group.body, options2)]);
       }
-      var fix = buildCommon.makeSpan(["fix"], []);
-      var node2 = buildCommon.makeSpan([group.alignment], [inner2, fix], options2);
-      var strut = buildCommon.makeSpan(["strut"]);
+      var fix = makeSpan(["fix"], []);
+      var node2 = makeSpan([group.alignment], [inner2, fix], options2);
+      var strut = makeSpan(["strut"]);
       strut.style.height = makeEm(node2.height + node2.depth);
       if (node2.depth) {
         strut.style.verticalAlign = makeEm(-node2.depth);
       }
       node2.children.unshift(strut);
-      node2 = buildCommon.makeSpan(["thinbox"], [node2], options2);
-      return buildCommon.makeSpan(["mord", "vbox"], [node2], options2);
+      node2 = makeSpan(["thinbox"], [node2], options2);
+      return makeSpan(["mord", "vbox"], [node2], options2);
     },
     mathmlBuilder: (group, options2) => {
-      var node2 = new mathMLTree.MathNode("mpadded", [buildGroup(group.body, options2)]);
+      var node2 = new MathNode("mpadded", [buildGroup(group.body, options2)]);
       if (group.alignment !== "rlap") {
         var offset = group.alignment === "llap" ? "-1" : "-0.5";
         node2.setAttribute("lspace", offset + "width");
@@ -25274,7 +25321,7 @@ ${config2.themeCSS}`;
     htmlBuilder: (group, options2) => {
       var body = chooseMathStyle(group, options2);
       var elements2 = buildExpression$1(body, options2, false);
-      return buildCommon.makeFragment(elements2);
+      return makeFragment(elements2);
     },
     mathmlBuilder: (group, options2) => {
       var body = chooseMathStyle(group, options2);
@@ -25282,8 +25329,8 @@ ${config2.themeCSS}`;
     }
   });
   var assembleSupSub = (base, supGroup, subGroup, options2, style, slant, baseShift) => {
-    base = buildCommon.makeSpan([], [base]);
-    var subIsSingleCharacter = subGroup && utils.isCharacterBox(subGroup);
+    base = makeSpan([], [base]);
+    var subIsSingleCharacter = subGroup && isCharacterBox(subGroup);
     var sub2;
     var sup2;
     if (supGroup) {
@@ -25303,7 +25350,7 @@ ${config2.themeCSS}`;
     var finalGroup;
     if (sup2 && sub2) {
       var bottom2 = options2.fontMetrics().bigOpSpacing5 + sub2.elem.height + sub2.elem.depth + sub2.kern + base.depth + baseShift;
-      finalGroup = buildCommon.makeVList({
+      finalGroup = makeVList({
         positionType: "bottom",
         positionData: bottom2,
         children: [{
@@ -25330,10 +25377,10 @@ ${config2.themeCSS}`;
           type: "kern",
           size: options2.fontMetrics().bigOpSpacing5
         }]
-      }, options2);
+      });
     } else if (sub2) {
       var top2 = base.height - baseShift;
-      finalGroup = buildCommon.makeVList({
+      finalGroup = makeVList({
         positionType: "top",
         positionData: top2,
         children: [{
@@ -25350,10 +25397,10 @@ ${config2.themeCSS}`;
           type: "elem",
           elem: base
         }]
-      }, options2);
+      });
     } else if (sup2) {
       var _bottom = base.depth + baseShift;
-      finalGroup = buildCommon.makeVList({
+      finalGroup = makeVList({
         positionType: "bottom",
         positionData: _bottom,
         children: [{
@@ -25370,19 +25417,19 @@ ${config2.themeCSS}`;
           type: "kern",
           size: options2.fontMetrics().bigOpSpacing5
         }]
-      }, options2);
+      });
     } else {
       return base;
     }
     var parts = [finalGroup];
     if (sub2 && slant !== 0 && !subIsSingleCharacter) {
-      var spacer = buildCommon.makeSpan(["mspace"], [], options2);
+      var spacer = makeSpan(["mspace"], [], options2);
       spacer.style.marginRight = makeEm(slant);
       parts.unshift(spacer);
     }
-    return buildCommon.makeSpan(["mop", "op-limits"], parts, options2);
+    return makeSpan(["mop", "op-limits"], parts, options2);
   };
-  var noSuccessor = ["\\smallint"];
+  var noSuccessor = /* @__PURE__ */ new Set(["\\smallint"]);
   var htmlBuilder$2 = (grp, options2) => {
     var supGroup;
     var subGroup;
@@ -25398,7 +25445,7 @@ ${config2.themeCSS}`;
     }
     var style = options2.style;
     var large = false;
-    if (style.size === Style$1.DISPLAY.size && group.symbol && !utils.contains(noSuccessor, group.name)) {
+    if (style.size === Style$1.DISPLAY.size && group.symbol && !noSuccessor.has(group.name)) {
       large = true;
     }
     var base;
@@ -25409,11 +25456,11 @@ ${config2.themeCSS}`;
         stash = group.name.slice(1);
         group.name = stash === "oiint" ? "\\iint" : "\\iiint";
       }
-      base = buildCommon.makeSymbol(group.name, fontName, "math", options2, ["mop", "op-symbol", large ? "large-op" : "small-op"]);
+      base = makeSymbol(group.name, fontName, "math", options2, ["mop", "op-symbol", large ? "large-op" : "small-op"]);
       if (stash.length > 0) {
         var italic = base.italic;
-        var oval = buildCommon.staticSvg(stash + "Size" + (large ? "2" : "1"), options2);
-        base = buildCommon.makeVList({
+        var oval = staticSvg(stash + "Size" + (large ? "2" : "1"), options2);
+        base = makeVList({
           positionType: "individualShift",
           children: [{
             type: "elem",
@@ -25424,7 +25471,7 @@ ${config2.themeCSS}`;
             elem: oval,
             shift: large ? 0.08 : 0
           }]
-        }, options2);
+        });
         group.name = "\\" + stash;
         base.classes.unshift("mop");
         base.italic = italic;
@@ -25435,20 +25482,20 @@ ${config2.themeCSS}`;
         base = inner2[0];
         base.classes[0] = "mop";
       } else {
-        base = buildCommon.makeSpan(["mop"], inner2, options2);
+        base = makeSpan(["mop"], inner2, options2);
       }
     } else {
       var output = [];
       for (var i2 = 1; i2 < group.name.length; i2++) {
-        output.push(buildCommon.mathsym(group.name[i2], group.mode, options2));
+        output.push(mathsym(group.name[i2], group.mode, options2));
       }
-      base = buildCommon.makeSpan(["mop"], output, options2);
+      base = makeSpan(["mop"], output, options2);
     }
     var baseShift = 0;
     var slant = 0;
     if ((base instanceof SymbolNode || group.name === "\\oiint" || group.name === "\\oiiint") && !group.suppressBaseShift) {
       baseShift = (base.height - base.depth) / 2 - options2.fontMetrics().axisHeight;
-      slant = base.italic;
+      slant = base.italic || 0;
     }
     if (hasLimits) {
       return assembleSupSub(base, supGroup, subGroup, options2, style, slant, baseShift);
@@ -25464,7 +25511,7 @@ ${config2.themeCSS}`;
     var node2;
     if (group.symbol) {
       node2 = new MathNode("mo", [makeText(group.name, group.mode)]);
-      if (utils.contains(noSuccessor, group.name)) {
+      if (noSuccessor.has(group.name)) {
         node2.setAttribute("largeop", "false");
       }
     } else if (group.body) {
@@ -25603,7 +25650,8 @@ ${config2.themeCSS}`;
     type: "op",
     names: ["\\int", "\\iint", "\\iiint", "\\oint", "\\oiint", "\\oiiint", "∫", "∬", "∭", "∮", "∯", "∰"],
     props: {
-      numArgs: 0
+      numArgs: 0,
+      allowedInArgument: true
     },
     handler(_ref5) {
       var {
@@ -25642,7 +25690,7 @@ ${config2.themeCSS}`;
     var base;
     if (group.body.length > 0) {
       var body = group.body.map((child2) => {
-        var childText = child2.text;
+        var childText = "text" in child2 ? child2.text : void 0;
         if (typeof childText === "string") {
           return {
             type: "textord",
@@ -25660,9 +25708,9 @@ ${config2.themeCSS}`;
           child.text = child.text.replace(/\u2212/, "-").replace(/\u2217/, "*");
         }
       }
-      base = buildCommon.makeSpan(["mop"], expression, options2);
+      base = makeSpan(["mop"], expression, options2);
     } else {
-      base = buildCommon.makeSpan(["mop"], [], options2);
+      base = makeSpan(["mop"], [], options2);
     }
     if (hasLimits) {
       return assembleSupSub(base, supGroup, subGroup, options2, options2.style, 0, 0);
@@ -25675,19 +25723,18 @@ ${config2.themeCSS}`;
     var isAllString = true;
     for (var i2 = 0; i2 < expression.length; i2++) {
       var node2 = expression[i2];
-      if (node2 instanceof mathMLTree.SpaceNode)
+      if (node2 instanceof SpaceNode)
         ;
-      else if (node2 instanceof mathMLTree.MathNode) {
+      else if (node2 instanceof MathNode) {
         switch (node2.type) {
           case "mi":
           case "mn":
-          case "ms":
           case "mspace":
           case "mtext":
             break;
           case "mo": {
             var child = node2.children[0];
-            if (node2.children.length === 1 && child instanceof mathMLTree.TextNode) {
+            if (node2.children.length === 1 && child instanceof TextNode) {
               child.text = child.text.replace(/\u2212/, "-").replace(/\u2217/, "*");
             } else {
               isAllString = false;
@@ -25703,15 +25750,15 @@ ${config2.themeCSS}`;
     }
     if (isAllString) {
       var word = expression.map((node3) => node3.toText()).join("");
-      expression = [new mathMLTree.TextNode(word)];
+      expression = [new TextNode(word)];
     }
-    var identifier2 = new mathMLTree.MathNode("mi", expression);
+    var identifier2 = new MathNode("mi", expression);
     identifier2.setAttribute("mathvariant", "normal");
-    var operator = new mathMLTree.MathNode("mo", [makeText("⁡", "text")]);
+    var operator = new MathNode("mo", [makeText("⁡", "text")]);
     if (group.parentIsSupSub) {
-      return new mathMLTree.MathNode("mrow", [identifier2, operator]);
+      return new MathNode("mrow", [identifier2, operator]);
     } else {
-      return mathMLTree.newDocumentFragment([identifier2, operator]);
+      return newDocumentFragment([identifier2, operator]);
     }
   };
   defineFunction({
@@ -25743,9 +25790,9 @@ ${config2.themeCSS}`;
     type: "ordgroup",
     htmlBuilder(group, options2) {
       if (group.semisimple) {
-        return buildCommon.makeFragment(buildExpression$1(group.body, options2, false));
+        return makeFragment(buildExpression$1(group.body, options2, false));
       }
-      return buildCommon.makeSpan(["mord"], buildExpression$1(group.body, options2, true), options2);
+      return makeSpan(["mord"], buildExpression$1(group.body, options2, true), options2);
     },
     mathmlBuilder(group, options2) {
       return buildExpressionRow(group.body, options2, true);
@@ -25770,9 +25817,9 @@ ${config2.themeCSS}`;
     },
     htmlBuilder(group, options2) {
       var innerGroup = buildGroup$1(group.body, options2.havingCrampedStyle());
-      var line2 = buildCommon.makeLineSpan("overline-line", options2);
+      var line2 = makeLineSpan("overline-line", options2);
       var defaultRuleThickness = options2.fontMetrics().defaultRuleThickness;
-      var vlist = buildCommon.makeVList({
+      var vlist = makeVList({
         positionType: "firstBaseline",
         children: [{
           type: "elem",
@@ -25787,13 +25834,13 @@ ${config2.themeCSS}`;
           type: "kern",
           size: defaultRuleThickness
         }]
-      }, options2);
-      return buildCommon.makeSpan(["mord", "overline"], [vlist], options2);
+      });
+      return makeSpan(["mord", "overline"], [vlist], options2);
     },
     mathmlBuilder(group, options2) {
-      var operator = new mathMLTree.MathNode("mo", [new mathMLTree.TextNode("‾")]);
+      var operator = new MathNode("mo", [new TextNode("‾")]);
       operator.setAttribute("stretchy", "true");
-      var node2 = new mathMLTree.MathNode("mover", [buildGroup(group.body, options2), operator]);
+      var node2 = new MathNode("mover", [buildGroup(group.body, options2), operator]);
       node2.setAttribute("accent", "true");
       return node2;
     }
@@ -25818,16 +25865,17 @@ ${config2.themeCSS}`;
     },
     htmlBuilder: (group, options2) => {
       var elements2 = buildExpression$1(group.body, options2.withPhantom(), false);
-      return buildCommon.makeFragment(elements2);
+      return makeFragment(elements2);
     },
     mathmlBuilder: (group, options2) => {
       var inner2 = buildExpression(group.body, options2);
-      return new mathMLTree.MathNode("mphantom", inner2);
+      return new MathNode("mphantom", inner2);
     }
   });
+  defineMacro("\\hphantom", "\\smash{\\phantom{#1}}");
   defineFunction({
-    type: "hphantom",
-    names: ["\\hphantom"],
+    type: "vphantom",
+    names: ["\\vphantom"],
     props: {
       numArgs: 1,
       allowedInText: true
@@ -25838,66 +25886,20 @@ ${config2.themeCSS}`;
       } = _ref2;
       var body = args[0];
       return {
-        type: "hphantom",
-        mode: parser2.mode,
-        body
-      };
-    },
-    htmlBuilder: (group, options2) => {
-      var node2 = buildCommon.makeSpan([], [buildGroup$1(group.body, options2.withPhantom())]);
-      node2.height = 0;
-      node2.depth = 0;
-      if (node2.children) {
-        for (var i2 = 0; i2 < node2.children.length; i2++) {
-          node2.children[i2].height = 0;
-          node2.children[i2].depth = 0;
-        }
-      }
-      node2 = buildCommon.makeVList({
-        positionType: "firstBaseline",
-        children: [{
-          type: "elem",
-          elem: node2
-        }]
-      }, options2);
-      return buildCommon.makeSpan(["mord"], [node2], options2);
-    },
-    mathmlBuilder: (group, options2) => {
-      var inner2 = buildExpression(ordargument(group.body), options2);
-      var phantom = new mathMLTree.MathNode("mphantom", inner2);
-      var node2 = new mathMLTree.MathNode("mpadded", [phantom]);
-      node2.setAttribute("height", "0px");
-      node2.setAttribute("depth", "0px");
-      return node2;
-    }
-  });
-  defineFunction({
-    type: "vphantom",
-    names: ["\\vphantom"],
-    props: {
-      numArgs: 1,
-      allowedInText: true
-    },
-    handler: (_ref3, args) => {
-      var {
-        parser: parser2
-      } = _ref3;
-      var body = args[0];
-      return {
         type: "vphantom",
         mode: parser2.mode,
         body
       };
     },
     htmlBuilder: (group, options2) => {
-      var inner2 = buildCommon.makeSpan(["inner"], [buildGroup$1(group.body, options2.withPhantom())]);
-      var fix = buildCommon.makeSpan(["fix"], []);
-      return buildCommon.makeSpan(["mord", "rlap"], [inner2, fix], options2);
+      var inner2 = makeSpan(["inner"], [buildGroup$1(group.body, options2.withPhantom())]);
+      var fix = makeSpan(["fix"], []);
+      return makeSpan(["mord", "rlap"], [inner2, fix], options2);
     },
     mathmlBuilder: (group, options2) => {
       var inner2 = buildExpression(ordargument(group.body), options2);
-      var phantom = new mathMLTree.MathNode("mphantom", inner2);
-      var node2 = new mathMLTree.MathNode("mpadded", [phantom]);
+      var phantom = new MathNode("mphantom", inner2);
+      var node2 = new MathNode("mpadded", [phantom]);
       node2.setAttribute("width", "0px");
       return node2;
     }
@@ -25926,17 +25928,17 @@ ${config2.themeCSS}`;
     htmlBuilder(group, options2) {
       var body = buildGroup$1(group.body, options2);
       var dy = calculateSize(group.dy, options2);
-      return buildCommon.makeVList({
+      return makeVList({
         positionType: "shift",
         positionData: -dy,
         children: [{
           type: "elem",
           elem: body
         }]
-      }, options2);
+      });
     },
     mathmlBuilder(group, options2) {
-      var node2 = new mathMLTree.MathNode("mpadded", [buildGroup(group.body, options2)]);
+      var node2 = new MathNode("mpadded", [buildGroup(group.body, options2)]);
       var dy = group.dy.number + group.dy.unit;
       node2.setAttribute("voffset", dy);
       return node2;
@@ -25947,7 +25949,8 @@ ${config2.themeCSS}`;
     names: ["\\relax"],
     props: {
       numArgs: 0,
-      allowedInText: true
+      allowedInText: true,
+      allowedInArgument: true
     },
     handler(_ref) {
       var {
@@ -25965,6 +25968,8 @@ ${config2.themeCSS}`;
     props: {
       numArgs: 2,
       numOptionalArgs: 1,
+      allowedInText: true,
+      allowedInMath: true,
       argTypes: ["size", "size", "size"]
     },
     handler(_ref, args, optArgs) {
@@ -25983,7 +25988,7 @@ ${config2.themeCSS}`;
       };
     },
     htmlBuilder(group, options2) {
-      var rule = buildCommon.makeSpan(["mord", "rule"], [], options2);
+      var rule = makeSpan(["mord", "rule"], [], options2);
       var width2 = calculateSize(group.width, options2);
       var height = calculateSize(group.height, options2);
       var shift = group.shift ? calculateSize(group.shift, options2) : 0;
@@ -26001,11 +26006,11 @@ ${config2.themeCSS}`;
       var height = calculateSize(group.height, options2);
       var shift = group.shift ? calculateSize(group.shift, options2) : 0;
       var color2 = options2.color && options2.getColor() || "black";
-      var rule = new mathMLTree.MathNode("mspace");
+      var rule = new MathNode("mspace");
       rule.setAttribute("mathbackground", color2);
       rule.setAttribute("width", makeEm(width2));
       rule.setAttribute("height", makeEm(height));
-      var wrapper = new mathMLTree.MathNode("mpadded", [rule]);
+      var wrapper = new MathNode("mpadded", [rule]);
       if (shift >= 0) {
         wrapper.setAttribute("height", makeEm(shift));
       } else {
@@ -26029,7 +26034,7 @@ ${config2.themeCSS}`;
       inner2[i2].height *= multiplier;
       inner2[i2].depth *= multiplier;
     }
-    return buildCommon.makeFragment(inner2);
+    return makeFragment(inner2);
   }
   var sizeFuncs = ["\\tiny", "\\sixptsize", "\\scriptsize", "\\footnotesize", "\\small", "\\normalsize", "\\large", "\\Large", "\\LARGE", "\\huge", "\\Huge"];
   var htmlBuilder = (group, options2) => {
@@ -26062,7 +26067,7 @@ ${config2.themeCSS}`;
     mathmlBuilder: (group, options2) => {
       var newOptions = options2.havingSize(group.size);
       var inner2 = buildExpression(group.body, newOptions);
-      var node2 = new mathMLTree.MathNode("mstyle", inner2);
+      var node2 = new MathNode("mstyle", inner2);
       node2.setAttribute("mathsize", makeEm(newOptions.sizeMultiplier));
       return node2;
     }
@@ -26086,7 +26091,7 @@ ${config2.themeCSS}`;
         var letter = "";
         for (var i2 = 0; i2 < tbArg.body.length; ++i2) {
           var node2 = tbArg.body[i2];
-          letter = node2.text;
+          letter = assertSymbolNodeType(node2).text;
           if (letter === "t") {
             smashHeight = true;
           } else if (letter === "b") {
@@ -26111,37 +26116,40 @@ ${config2.themeCSS}`;
       };
     },
     htmlBuilder: (group, options2) => {
-      var node2 = buildCommon.makeSpan([], [buildGroup$1(group.body, options2)]);
+      var node2 = makeSpan([], [buildGroup$1(group.body, options2)]);
       if (!group.smashHeight && !group.smashDepth) {
         return node2;
       }
       if (group.smashHeight) {
         node2.height = 0;
-        if (node2.children) {
-          for (var i2 = 0; i2 < node2.children.length; i2++) {
-            node2.children[i2].height = 0;
-          }
-        }
       }
       if (group.smashDepth) {
         node2.depth = 0;
-        if (node2.children) {
-          for (var _i6 = 0; _i6 < node2.children.length; _i6++) {
-            node2.children[_i6].depth = 0;
+      }
+      if (group.smashHeight && group.smashDepth) {
+        return makeSpan(["mord", "smash"], [node2], options2);
+      }
+      if (node2.children) {
+        for (var i2 = 0; i2 < node2.children.length; i2++) {
+          if (group.smashHeight) {
+            node2.children[i2].height = 0;
+          }
+          if (group.smashDepth) {
+            node2.children[i2].depth = 0;
           }
         }
       }
-      var smashedNode = buildCommon.makeVList({
+      var smashedNode = makeVList({
         positionType: "firstBaseline",
         children: [{
           type: "elem",
           elem: node2
         }]
-      }, options2);
-      return buildCommon.makeSpan(["mord"], [smashedNode], options2);
+      });
+      return makeSpan(["mord"], [smashedNode], options2);
     },
     mathmlBuilder: (group, options2) => {
-      var node2 = new mathMLTree.MathNode("mpadded", [buildGroup(group.body, options2)]);
+      var node2 = new MathNode("mpadded", [buildGroup(group.body, options2)]);
       if (group.smashHeight) {
         node2.setAttribute("height", "0px");
       }
@@ -26176,7 +26184,7 @@ ${config2.themeCSS}`;
       if (inner2.height === 0) {
         inner2.height = options2.fontMetrics().xHeight;
       }
-      inner2 = buildCommon.wrapFragment(inner2, options2);
+      inner2 = wrapFragment(inner2, options2);
       var metrics = options2.fontMetrics();
       var theta = metrics.defaultRuleThickness;
       var phi = theta;
@@ -26189,14 +26197,14 @@ ${config2.themeCSS}`;
         span: img,
         ruleWidth,
         advanceWidth
-      } = delimiter.sqrtImage(minDelimiterHeight, options2);
+      } = makeSqrtImage(minDelimiterHeight, options2);
       var delimDepth = img.height - ruleWidth;
       if (delimDepth > inner2.height + inner2.depth + lineClearance) {
         lineClearance = (lineClearance + delimDepth - inner2.height - inner2.depth) / 2;
       }
       var imgShift = img.height - inner2.height - lineClearance - ruleWidth;
       inner2.style.paddingLeft = makeEm(advanceWidth);
-      var body = buildCommon.makeVList({
+      var body = makeVList({
         positionType: "firstBaseline",
         children: [{
           type: "elem",
@@ -26212,23 +26220,23 @@ ${config2.themeCSS}`;
           type: "kern",
           size: ruleWidth
         }]
-      }, options2);
+      });
       if (!group.index) {
-        return buildCommon.makeSpan(["mord", "sqrt"], [body], options2);
+        return makeSpan(["mord", "sqrt"], [body], options2);
       } else {
         var newOptions = options2.havingStyle(Style$1.SCRIPTSCRIPT);
         var rootm = buildGroup$1(group.index, newOptions, options2);
         var toShift = 0.6 * (body.height - body.depth);
-        var rootVList = buildCommon.makeVList({
+        var rootVList = makeVList({
           positionType: "shift",
           positionData: -toShift,
           children: [{
             type: "elem",
             elem: rootm
           }]
-        }, options2);
-        var rootVListWrap = buildCommon.makeSpan(["root"], [rootVList]);
-        return buildCommon.makeSpan(["mord", "sqrt"], [rootVListWrap, body], options2);
+        });
+        var rootVListWrap = makeSpan(["root"], [rootVList]);
+        return makeSpan(["mord", "sqrt"], [rootVListWrap, body], options2);
       }
     },
     mathmlBuilder(group, options2) {
@@ -26236,7 +26244,7 @@ ${config2.themeCSS}`;
         body,
         index: index2
       } = group;
-      return index2 ? new mathMLTree.MathNode("mroot", [buildGroup(body, options2), buildGroup(index2, options2)]) : new mathMLTree.MathNode("msqrt", [buildGroup(body, options2)]);
+      return index2 ? new MathNode("mroot", [buildGroup(body, options2), buildGroup(index2, options2)]) : new MathNode("msqrt", [buildGroup(body, options2)]);
     }
   });
   var styleMap = {
@@ -26279,7 +26287,7 @@ ${config2.themeCSS}`;
       var newStyle = styleMap[group.style];
       var newOptions = options2.havingStyle(newStyle);
       var inner2 = buildExpression(group.body, newOptions);
-      var node2 = new mathMLTree.MathNode("mstyle", inner2);
+      var node2 = new MathNode("mstyle", inner2);
       var styleAttributes = {
         "display": ["0", "true"],
         "text": ["0", "false"],
@@ -26303,7 +26311,7 @@ ${config2.themeCSS}`;
       var _delegate = base.alwaysHandleSupSub && (options2.style.size === Style$1.DISPLAY.size || base.limits);
       return _delegate ? htmlBuilder$1 : null;
     } else if (base.type === "accent") {
-      return utils.isCharacterBox(base.base) ? htmlBuilder$a : null;
+      return isCharacterBox(base.base) ? htmlBuilder$a : null;
     } else if (base.type === "horizBrace") {
       var isSup = !group.sub;
       return isSup === base.isOver ? htmlBuilder$3 : null;
@@ -26329,18 +26337,18 @@ ${config2.themeCSS}`;
       var metrics = options2.fontMetrics();
       var supShift = 0;
       var subShift = 0;
-      var isCharacterBox2 = valueBase && utils.isCharacterBox(valueBase);
+      var isCharBox = valueBase && isCharacterBox(valueBase);
       if (valueSup) {
         var newOptions = options2.havingStyle(options2.style.sup());
         supm = buildGroup$1(valueSup, newOptions, options2);
-        if (!isCharacterBox2) {
+        if (!isCharBox) {
           supShift = base.height - newOptions.fontMetrics().supDrop * newOptions.sizeMultiplier / options2.sizeMultiplier;
         }
       }
       if (valueSub) {
         var _newOptions = options2.havingStyle(options2.style.sub());
         subm = buildGroup$1(valueSub, _newOptions, options2);
-        if (!isCharacterBox2) {
+        if (!isCharBox) {
           subShift = base.depth + _newOptions.fontMetrics().subDrop * _newOptions.sizeMultiplier / options2.sizeMultiplier;
         }
       }
@@ -26387,10 +26395,10 @@ ${config2.themeCSS}`;
           shift: -supShift,
           marginRight
         }];
-        supsub = buildCommon.makeVList({
+        supsub = makeVList({
           positionType: "individualShift",
           children: vlistElem
-        }, options2);
+        });
       } else if (subm) {
         subShift = Math.max(subShift, metrics.sub1, subm.height - 0.8 * metrics.xHeight);
         var _vlistElem = [{
@@ -26399,14 +26407,14 @@ ${config2.themeCSS}`;
           marginLeft,
           marginRight
         }];
-        supsub = buildCommon.makeVList({
+        supsub = makeVList({
           positionType: "shift",
           positionData: subShift,
           children: _vlistElem
-        }, options2);
+        });
       } else if (supm) {
         supShift = Math.max(supShift, minSupShift, supm.depth + 0.25 * metrics.xHeight);
-        supsub = buildCommon.makeVList({
+        supsub = makeVList({
           positionType: "shift",
           positionData: -supShift,
           children: [{
@@ -26414,12 +26422,12 @@ ${config2.themeCSS}`;
             elem: supm,
             marginRight
           }]
-        }, options2);
+        });
       } else {
         throw new Error("supsub must have either sup or sub.");
       }
       var mclass = getTypeOfDomTree(base, "right") || "mord";
-      return buildCommon.makeSpan([mclass], [base, buildCommon.makeSpan(["msupsub"], [supsub])], options2);
+      return makeSpan([mclass], [base, makeSpan(["msupsub"], [supsub])], options2);
     },
     mathmlBuilder(group, options2) {
       var isBrace = false;
@@ -26473,16 +26481,16 @@ ${config2.themeCSS}`;
           nodeType2 = "msubsup";
         }
       }
-      return new mathMLTree.MathNode(nodeType2, children2);
+      return new MathNode(nodeType2, children2);
     }
   });
   defineFunctionBuilders({
     type: "atom",
     htmlBuilder(group, options2) {
-      return buildCommon.mathsym(group.text, group.mode, options2, ["m" + group.family]);
+      return mathsym(group.text, group.mode, options2, ["m" + group.family]);
     },
     mathmlBuilder(group, options2) {
-      var node2 = new mathMLTree.MathNode("mo", [makeText(group.text, group.mode)]);
+      var node2 = new MathNode("mo", [makeText(group.text, group.mode)]);
       if (group.family === "bin") {
         var variant = getVariant(group, options2);
         if (variant === "bold-italic") {
@@ -26504,10 +26512,10 @@ ${config2.themeCSS}`;
   defineFunctionBuilders({
     type: "mathord",
     htmlBuilder(group, options2) {
-      return buildCommon.makeOrd(group, options2, "mathord");
+      return makeOrd(group, options2, "mathord");
     },
     mathmlBuilder(group, options2) {
-      var node2 = new mathMLTree.MathNode("mi", [makeText(group.text, group.mode, options2)]);
+      var node2 = new MathNode("mi", [makeText(group.text, group.mode, options2)]);
       var variant = getVariant(group, options2) || "italic";
       if (variant !== defaultVariant[node2.type]) {
         node2.setAttribute("mathvariant", variant);
@@ -26518,20 +26526,20 @@ ${config2.themeCSS}`;
   defineFunctionBuilders({
     type: "textord",
     htmlBuilder(group, options2) {
-      return buildCommon.makeOrd(group, options2, "textord");
+      return makeOrd(group, options2, "textord");
     },
     mathmlBuilder(group, options2) {
       var text2 = makeText(group.text, group.mode, options2);
       var variant = getVariant(group, options2) || "normal";
       var node2;
       if (group.mode === "text") {
-        node2 = new mathMLTree.MathNode("mtext", [text2]);
+        node2 = new MathNode("mtext", [text2]);
       } else if (/[0-9]/.test(group.text)) {
-        node2 = new mathMLTree.MathNode("mn", [text2]);
+        node2 = new MathNode("mn", [text2]);
       } else if (group.text === "\\prime") {
-        node2 = new mathMLTree.MathNode("mo", [text2]);
+        node2 = new MathNode("mo", [text2]);
       } else {
-        node2 = new mathMLTree.MathNode("mi", [text2]);
+        node2 = new MathNode("mi", [text2]);
       }
       if (variant !== defaultVariant[node2.type]) {
         node2.setAttribute("mathvariant", variant);
@@ -26560,14 +26568,14 @@ ${config2.themeCSS}`;
       if (regularSpace.hasOwnProperty(group.text)) {
         var className = regularSpace[group.text].className || "";
         if (group.mode === "text") {
-          var ord = buildCommon.makeOrd(group, options2, "textord");
+          var ord = makeOrd(group, options2, "textord");
           ord.classes.push(className);
           return ord;
         } else {
-          return buildCommon.makeSpan(["mspace", className], [buildCommon.mathsym(group.text, group.mode, options2)], options2);
+          return makeSpan(["mspace", className], [mathsym(group.text, group.mode, options2)], options2);
         }
       } else if (cssSpace.hasOwnProperty(group.text)) {
-        return buildCommon.makeSpan(["mspace", cssSpace[group.text]], [], options2);
+        return makeSpan(["mspace", cssSpace[group.text]], [], options2);
       } else {
         throw new ParseError('Unknown type of space "' + group.text + '"');
       }
@@ -26575,9 +26583,9 @@ ${config2.themeCSS}`;
     mathmlBuilder(group, options2) {
       var node2;
       if (regularSpace.hasOwnProperty(group.text)) {
-        node2 = new mathMLTree.MathNode("mtext", [new mathMLTree.TextNode(" ")]);
+        node2 = new MathNode("mtext", [new TextNode(" ")]);
       } else if (cssSpace.hasOwnProperty(group.text)) {
-        return new mathMLTree.MathNode("mspace");
+        return new MathNode("mspace");
       } else {
         throw new ParseError('Unknown type of space "' + group.text + '"');
       }
@@ -26585,14 +26593,14 @@ ${config2.themeCSS}`;
     }
   });
   var pad = () => {
-    var padNode = new mathMLTree.MathNode("mtd", []);
+    var padNode = new MathNode("mtd", []);
     padNode.setAttribute("width", "50%");
     return padNode;
   };
   defineFunctionBuilders({
     type: "tag",
     mathmlBuilder(group, options2) {
-      var table = new mathMLTree.MathNode("mtable", [new mathMLTree.MathNode("mtr", [pad(), new mathMLTree.MathNode("mtd", [buildExpressionRow(group.body, options2)]), pad(), new mathMLTree.MathNode("mtd", [buildExpressionRow(group.tag, options2)])])]);
+      var table = new MathNode("mtable", [new MathNode("mtr", [pad(), new MathNode("mtd", [buildExpressionRow(group.body, options2)]), pad(), new MathNode("mtd", [buildExpressionRow(group.tag, options2)])])]);
       table.setAttribute("width", "100%");
       return table;
     }
@@ -26664,7 +26672,7 @@ ${config2.themeCSS}`;
     htmlBuilder(group, options2) {
       var newOptions = optionsWithFont(group, options2);
       var inner2 = buildExpression$1(group.body, newOptions, true);
-      return buildCommon.makeSpan(["mord", "text"], inner2, newOptions);
+      return makeSpan(["mord", "text"], inner2, newOptions);
     },
     mathmlBuilder(group, options2) {
       var newOptions = optionsWithFont(group, options2);
@@ -26690,9 +26698,9 @@ ${config2.themeCSS}`;
     },
     htmlBuilder(group, options2) {
       var innerGroup = buildGroup$1(group.body, options2);
-      var line2 = buildCommon.makeLineSpan("underline-line", options2);
+      var line2 = makeLineSpan("underline-line", options2);
       var defaultRuleThickness = options2.fontMetrics().defaultRuleThickness;
-      var vlist = buildCommon.makeVList({
+      var vlist = makeVList({
         positionType: "top",
         positionData: innerGroup.height,
         children: [{
@@ -26708,13 +26716,13 @@ ${config2.themeCSS}`;
           type: "elem",
           elem: innerGroup
         }]
-      }, options2);
-      return buildCommon.makeSpan(["mord", "underline"], [vlist], options2);
+      });
+      return makeSpan(["mord", "underline"], [vlist], options2);
     },
     mathmlBuilder(group, options2) {
-      var operator = new mathMLTree.MathNode("mo", [new mathMLTree.TextNode("‾")]);
+      var operator = new MathNode("mo", [new TextNode("‾")]);
       operator.setAttribute("stretchy", "true");
-      var node2 = new mathMLTree.MathNode("munder", [buildGroup(group.body, options2), operator]);
+      var node2 = new MathNode("munder", [buildGroup(group.body, options2), operator]);
       node2.setAttribute("accentunder", "true");
       return node2;
     }
@@ -26742,17 +26750,18 @@ ${config2.themeCSS}`;
       var body = buildGroup$1(group.body, options2);
       var axisHeight = options2.fontMetrics().axisHeight;
       var dy = 0.5 * (body.height - axisHeight - (body.depth + axisHeight));
-      return buildCommon.makeVList({
+      return makeVList({
         positionType: "shift",
         positionData: dy,
         children: [{
           type: "elem",
           elem: body
         }]
-      }, options2);
+      });
     },
     mathmlBuilder(group, options2) {
-      return new mathMLTree.MathNode("mpadded", [buildGroup(group.body, options2)], ["vcenter"]);
+      var mpadded = new MathNode("mpadded", [buildGroup(group.body, options2)], ["vcenter"]);
+      return new MathNode("mrow", [mpadded]);
     }
   });
   defineFunction({
@@ -26774,13 +26783,13 @@ ${config2.themeCSS}`;
         if (c2 === "~") {
           c2 = "\\textasciitilde";
         }
-        body.push(buildCommon.makeSymbol(c2, "Typewriter-Regular", group.mode, newOptions, ["mord", "texttt"]));
+        body.push(makeSymbol(c2, "Typewriter-Regular", group.mode, newOptions, ["mord", "texttt"]));
       }
-      return buildCommon.makeSpan(["mord", "text"].concat(newOptions.sizingClasses(options2)), buildCommon.tryCombineChars(body), newOptions);
+      return makeSpan(["mord", "text"].concat(newOptions.sizingClasses(options2)), tryCombineChars(body), newOptions);
     },
     mathmlBuilder(group, options2) {
-      var text2 = new mathMLTree.TextNode(makeVerb(group));
-      var node2 = new mathMLTree.MathNode("mtext", [text2]);
+      var text2 = new TextNode(makeVerb(group));
+      var node2 = new MathNode("mtext", [text2]);
       node2.setAttribute("mathvariant", "monospace");
       return node2;
     }
@@ -26807,10 +26816,6 @@ ${config2.themeCSS}`;
     // Category codes. The lexer only supports comment characters (14) for now.
     // MacroExpander additionally distinguishes active (13).
     constructor(input, settings) {
-      this.input = void 0;
-      this.settings = void 0;
-      this.tokenRegex = void 0;
-      this.catcodes = void 0;
       this.input = input;
       this.settings = settings;
       this.tokenRegex = new RegExp(tokenRegexString, "g");
@@ -26865,9 +26870,6 @@ ${config2.themeCSS}`;
       if (globalMacros === void 0) {
         globalMacros = {};
       }
-      this.current = void 0;
-      this.builtins = void 0;
-      this.undefStack = void 0;
       this.current = globalMacros;
       this.builtins = builtins;
       this.undefStack = [];
@@ -27050,7 +27052,7 @@ ${config2.themeCSS}`;
   defineMacro("\\char", function(context) {
     var token2 = context.popToken();
     var base;
-    var number2 = "";
+    var number2 = 0;
     if (token2.text === "'") {
       base = 8;
       token2 = context.popToken();
@@ -27083,7 +27085,7 @@ ${config2.themeCSS}`;
     }
     return "\\@char{" + number2 + "}";
   });
-  var newcommand = (context, existsOK, nonexistsOK) => {
+  var newcommand = (context, existsOK, nonexistsOK, skipIfExists) => {
     var arg = context.consumeArg().tokens;
     if (arg.length !== 1) {
       throw new ParseError("\\newcommand's first argument must be a macro name");
@@ -27111,15 +27113,17 @@ ${config2.themeCSS}`;
       numArgs = parseInt(argText);
       arg = context.consumeArg().tokens;
     }
-    context.macros.set(name, {
-      tokens: arg,
-      numArgs
-    });
+    if (!(exists2 && skipIfExists)) {
+      context.macros.set(name, {
+        tokens: arg,
+        numArgs
+      });
+    }
     return "";
   };
-  defineMacro("\\newcommand", (context) => newcommand(context, false, true));
-  defineMacro("\\renewcommand", (context) => newcommand(context, true, false));
-  defineMacro("\\providecommand", (context) => newcommand(context, true, true));
+  defineMacro("\\newcommand", (context) => newcommand(context, false, true, false));
+  defineMacro("\\renewcommand", (context) => newcommand(context, true, false, false));
+  defineMacro("\\providecommand", (context) => newcommand(context, true, true, true));
   defineMacro("\\message", (context) => {
     var arg = context.consumeArgs(1)[0];
     console.log(arg.reverse().map((token2) => token2.text).join(""));
@@ -27158,13 +27162,12 @@ ${config2.themeCSS}`;
   defineMacro("ℌ", "\\mathfrak{H}");
   defineMacro("ℨ", "\\mathfrak{Z}");
   defineMacro("\\Bbbk", "\\Bbb{k}");
-  defineMacro("·", "\\cdotp");
   defineMacro("\\llap", "\\mathllap{\\textrm{#1}}");
   defineMacro("\\rlap", "\\mathrlap{\\textrm{#1}}");
   defineMacro("\\clap", "\\mathclap{\\textrm{#1}}");
   defineMacro("\\mathstrut", "\\vphantom{(}");
   defineMacro("\\underbar", "\\underline{\\text{#1}}");
-  defineMacro("\\not", '\\html@mathml{\\mathrel{\\mathrlap\\@not}}{\\char"338}');
+  defineMacro("\\not", '\\html@mathml{\\mathrel{\\mathrlap\\@not}\\nobreak}{\\char"338}');
   defineMacro("\\neq", "\\html@mathml{\\mathrel{\\not=}}{\\mathrel{\\char`≠}}");
   defineMacro("\\ne", "\\neq");
   defineMacro("≠", "\\neq");
@@ -27186,12 +27189,11 @@ ${config2.themeCSS}`;
   defineMacro("⌟", "\\lrcorner");
   defineMacro("©", "\\copyright");
   defineMacro("®", "\\textregistered");
-  defineMacro("️", "\\textregistered");
   defineMacro("\\ulcorner", '\\html@mathml{\\@ulcorner}{\\mathop{\\char"231c}}');
   defineMacro("\\urcorner", '\\html@mathml{\\@urcorner}{\\mathop{\\char"231d}}');
   defineMacro("\\llcorner", '\\html@mathml{\\@llcorner}{\\mathop{\\char"231e}}');
   defineMacro("\\lrcorner", '\\html@mathml{\\@lrcorner}{\\mathop{\\char"231f}}');
-  defineMacro("\\vdots", "\\mathord{\\varvdots\\rule{0pt}{15pt}}");
+  defineMacro("\\vdots", "{\\varvdots\\rule{0pt}{15pt}}");
   defineMacro("⋮", "\\vdots");
   defineMacro("\\varGamma", "\\mathit{\\Gamma}");
   defineMacro("\\varDelta", "\\mathit{\\Delta}");
@@ -27210,6 +27212,8 @@ ${config2.themeCSS}`;
   defineMacro("\\iff", "\\DOTSB\\;\\Longleftrightarrow\\;");
   defineMacro("\\implies", "\\DOTSB\\;\\Longrightarrow\\;");
   defineMacro("\\impliedby", "\\DOTSB\\;\\Longleftarrow\\;");
+  defineMacro("\\dddot", "{\\overset{\\raisebox{-0.1ex}{\\normalsize ...}}{#1}}");
+  defineMacro("\\ddddot", "{\\overset{\\raisebox{-0.1ex}{\\normalsize ....}}{#1}}");
   var dotsByToken = {
     ",": "\\dotsc",
     "\\not": "\\dotsb",
@@ -27265,6 +27269,7 @@ ${config2.themeCSS}`;
     // Symbols whose definition starts with \DOTSX:
     "\\DOTSX": "\\dotsx"
   };
+  var dotsbGroups = /* @__PURE__ */ new Set(["bin", "rel"]);
   defineMacro("\\dots", function(context) {
     var thedots = "\\dotso";
     var next2 = context.expandAfterFuture().text;
@@ -27273,7 +27278,7 @@ ${config2.themeCSS}`;
     } else if (next2.slice(0, 4) === "\\not") {
       thedots = "\\dotsb";
     } else if (next2 in symbols.math) {
-      if (utils.contains(["bin", "rel"], symbols.math[next2].group)) {
+      if (dotsbGroups.has(symbols.math[next2].group)) {
         thedots = "\\dotsb";
       }
     }
@@ -27631,12 +27636,6 @@ ${config2.themeCSS}`;
   };
   class MacroExpander {
     constructor(input, settings, mode) {
-      this.settings = void 0;
-      this.expansionCount = void 0;
-      this.lexer = void 0;
-      this.macros = void 0;
-      this.stack = void 0;
-      this.mode = void 0;
       this.settings = settings;
       this.expansionCount = 0;
       this.feed(input);
@@ -27733,7 +27732,7 @@ ${config2.themeCSS}`;
       }
       this.pushToken(new Token("EOF", end2.loc));
       this.pushTokens(tokens);
-      return start2.range(end2, "");
+      return new Token("", SourceLocation.range(start2, end2));
     }
     /**
      * Consume all following space tokens, without expansion.
@@ -27909,7 +27908,6 @@ ${config2.themeCSS}`;
           return token2;
         }
       }
-      throw new Error();
     }
     /**
      * Fully expand the given macro name and return the resulting list of
@@ -27970,9 +27968,9 @@ ${config2.themeCSS}`;
       var expansion = typeof definition2 === "function" ? definition2(this) : definition2;
       if (typeof expansion === "string") {
         var numArgs = 0;
-        if (expansion.indexOf("#") !== -1) {
+        if (expansion.includes("#")) {
           var stripped = expansion.replace(/##/g, "");
-          while (stripped.indexOf("#" + (numArgs + 1)) !== -1) {
+          while (stripped.includes("#" + (numArgs + 1))) {
             ++numArgs;
           }
         }
@@ -28510,15 +28508,11 @@ ${config2.themeCSS}`;
   };
   class Parser {
     constructor(input, settings) {
-      this.mode = void 0;
-      this.gullet = void 0;
-      this.settings = void 0;
-      this.leftrightDepth = void 0;
-      this.nextToken = void 0;
       this.mode = "math";
       this.gullet = new MacroExpander(input, settings, this.mode);
       this.settings = settings;
       this.leftrightDepth = 0;
+      this.nextToken = null;
     }
     /**
      * Checks a result to make sure it has the right type, and throws an
@@ -28598,7 +28592,7 @@ ${config2.themeCSS}`;
      * Parses an "expression", which is a list of atoms.
      *
      * `breakOnInfix`: Should the parsing stop when we hit infix nodes? This
-     *                 happens when functions have higher precedence han infix
+     *                 happens when functions have higher precedence than infix
      *                 nodes in implicit parses.
      *
      * `breakOnTokenText`: The text of the token that the expression should end
@@ -28612,7 +28606,7 @@ ${config2.themeCSS}`;
           this.consumeSpaces();
         }
         var lex2 = this.fetch();
-        if (Parser.endOfExpression.indexOf(lex2.text) !== -1) {
+        if (Parser.endOfExpression.has(lex2.text)) {
           break;
         }
         if (breakOnTokenText && lex2.text === breakOnTokenText) {
@@ -28645,12 +28639,13 @@ ${config2.themeCSS}`;
       var overIndex = -1;
       var funcName;
       for (var i2 = 0; i2 < body.length; i2++) {
-        if (body[i2].type === "infix") {
+        var node2 = body[i2];
+        if (node2.type === "infix") {
           if (overIndex !== -1) {
-            throw new ParseError("only one infix operator per group", body[i2].token);
+            throw new ParseError("only one infix operator per group", node2.token);
           }
           overIndex = i2;
-          funcName = body[i2].replaceWith;
+          funcName = node2.replaceWith;
         }
       }
       if (overIndex !== -1 && funcName) {
@@ -28676,13 +28671,13 @@ ${config2.themeCSS}`;
             body: denomBody
           };
         }
-        var node2;
+        var _node;
         if (funcName === "\\\\abovefrac") {
-          node2 = this.callFunction(funcName, [numerNode, body[overIndex], denomNode], []);
+          _node = this.callFunction(funcName, [numerNode, body[overIndex], denomNode], []);
         } else {
-          node2 = this.callFunction(funcName, [numerNode, denomNode], []);
+          _node = this.callFunction(funcName, [numerNode, denomNode], []);
         }
-        return [node2];
+        return [_node];
       } else {
         return body;
       }
@@ -28695,7 +28690,11 @@ ${config2.themeCSS}`;
       var symbol = symbolToken.text;
       this.consume();
       this.consumeSpaces();
-      var group = this.parseGroup(name);
+      var group;
+      do {
+        var _group;
+        group = this.parseGroup(name);
+      } while (((_group = group) == null ? void 0 : _group.type) === "internal");
       if (!group) {
         throw new ParseError("Expected group after '" + symbol + "'", symbolToken);
       }
@@ -28732,6 +28731,9 @@ ${config2.themeCSS}`;
      */
     parseAtom(breakOnTokenText) {
       var base = this.parseGroup("atom", breakOnTokenText);
+      if ((base == null ? void 0 : base.type) === "internal") {
+        return base;
+      }
       if (this.mode === "text") {
         return base;
       }
@@ -28889,7 +28891,7 @@ ${config2.themeCSS}`;
       for (var i2 = 0; i2 < totalArgs; i2++) {
         var argType = funcData.argTypes && funcData.argTypes[i2];
         var isOptional = i2 < funcData.numOptionalArgs;
-        if (funcData.primitive && argType == null || // \sqrt expands into primitive if optional argument doesn't exist
+        if ("primitive" in funcData && funcData.primitive && argType == null || // \sqrt expands into primitive if optional argument doesn't exist
         funcData.type === "sqrt" && i2 === 1 && optArgs[0] == null) {
           argType = "primitive";
         }
@@ -28943,11 +28945,11 @@ ${config2.themeCSS}`;
           if (optional) {
             throw new ParseError("A primitive argument cannot be optional");
           }
-          var _group = this.parseGroup(name);
-          if (_group == null) {
+          var _group2 = this.parseGroup(name);
+          if (_group2 == null) {
             throw new ParseError("Expected group as " + name, this.fetch());
           }
-          return _group;
+          return _group2;
         }
         case "original":
         case null:
@@ -29012,7 +29014,7 @@ ${config2.themeCSS}`;
       if (res == null) {
         return null;
       }
-      var match = /^(#[a-f0-9]{3}|#?[a-f0-9]{6}|[a-z]+)$/i.exec(res.text);
+      var match = /^(#[a-f0-9]{3,4}|#[a-f0-9]{6}|#[a-f0-9]{8}|[a-f0-9]{6}|[a-z]+)$/i.exec(res.text);
       if (!match) {
         throw new ParseError("Invalid color: '" + res.text + "'", res);
       }
@@ -29164,13 +29166,21 @@ ${config2.themeCSS}`;
       var n = group.length - 1;
       for (var i2 = 0; i2 < n; ++i2) {
         var a = group[i2];
+        if (a.type !== "textord") {
+          continue;
+        }
         var v = a.text;
-        if (v === "-" && group[i2 + 1].text === "-") {
-          if (i2 + 1 < n && group[i2 + 2].text === "-") {
+        var next2 = group[i2 + 1];
+        if (!next2 || next2.type !== "textord") {
+          continue;
+        }
+        if (v === "-" && next2.text === "-") {
+          var afterNext = group[i2 + 2];
+          if (i2 + 1 < n && afterNext && afterNext.type === "textord" && afterNext.text === "-") {
             group.splice(i2, 3, {
               type: "textord",
               mode: "text",
-              loc: SourceLocation.range(a, group[i2 + 2]),
+              loc: SourceLocation.range(a, afterNext),
               text: "---"
             });
             n -= 2;
@@ -29178,17 +29188,17 @@ ${config2.themeCSS}`;
             group.splice(i2, 2, {
               type: "textord",
               mode: "text",
-              loc: SourceLocation.range(a, group[i2 + 1]),
+              loc: SourceLocation.range(a, next2),
               text: "--"
             });
             n -= 1;
           }
         }
-        if ((v === "'" || v === "`") && group[i2 + 1].text === v) {
+        if ((v === "'" || v === "`") && next2.text === v) {
           group.splice(i2, 2, {
             type: "textord",
             mode: "text",
-            loc: SourceLocation.range(a, group[i2 + 1]),
+            loc: SourceLocation.range(a, next2),
             text: v + v
           });
           n -= 1;
@@ -29237,7 +29247,7 @@ ${config2.themeCSS}`;
       }
       var symbol;
       if (symbols[this.mode][text2]) {
-        if (this.settings.strict && this.mode === "math" && extraLatin.indexOf(text2) >= 0) {
+        if (this.settings.strict && this.mode === "math" && extraLatin.includes(text2)) {
           this.settings.reportNonstrict("unicodeTextInMathMode", 'Latin-1/Unicode text character "' + text2[0] + '" used in math mode', nucleus);
         }
         var group = symbols[this.mode][text2].group;
@@ -29296,7 +29306,7 @@ ${config2.themeCSS}`;
             label: command,
             isStretchy: false,
             isShifty: true,
-            // $FlowFixMe
+            // TODO(ts)
             base: symbol
           };
         }
@@ -29304,7 +29314,7 @@ ${config2.themeCSS}`;
       return symbol;
     }
   }
-  Parser.endOfExpression = ["}", "\\endgroup", "\\end", "\\right", "&"];
+  Parser.endOfExpression = /* @__PURE__ */ new Set(["}", "\\endgroup", "\\end", "\\right", "&"]);
   var parseTree = function parseTree2(toParse, settings) {
     if (!(typeof toParse === "string" || toParse instanceof String)) {
       throw new TypeError("KaTeX can only parse string typed expression");
@@ -29352,7 +29362,7 @@ ${config2.themeCSS}`;
     if (options2.throwOnError || !(error instanceof ParseError)) {
       throw error;
     }
-    var node2 = buildCommon.makeSpan(["katex-error"], [new SymbolNode(expression)]);
+    var node2 = makeSpan(["katex-error"], [new SymbolNode(expression)]);
     node2.setAttribute("title", error.toString());
     node2.setAttribute("style", "color:" + options2.errorColor);
     return node2;
@@ -29375,11 +29385,20 @@ ${config2.themeCSS}`;
       return renderError(error, expression, settings);
     }
   };
+  var version$1 = "0.16.45";
+  var __domTree = {
+    Span,
+    Anchor,
+    SymbolNode,
+    SvgNode,
+    PathNode,
+    LineNode
+  };
   var katex = {
     /**
      * Current KaTeX version
      */
-    version: "0.16.11",
+    version: version$1,
     /**
      * Renders the given LaTeX into an HTML+MathML combination, and adds
      * it as a child to the specified DOM node.
@@ -29395,7 +29414,7 @@ ${config2.themeCSS}`;
      */
     ParseError,
     /**
-     * The shema of Settings
+     * The schema of Settings
      */
     SETTINGS_SCHEMA,
     /**
@@ -29447,22 +29466,30 @@ ${config2.themeCSS}`;
     /**
      * Expose the dom tree node types, which can be useful for type checking nodes.
      *
-     * NOTE: This method is not currently recommended for public use.
+     * NOTE: These methods are not currently recommended for public use.
      * The internal tree representation is unstable and is very likely
      * to change. Use at your own risk.
      */
-    __domTree: {
-      Span,
-      Anchor,
-      SymbolNode,
-      SvgNode,
-      PathNode,
-      LineNode
-    }
+    __domTree
   };
   const katex$1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
-    default: katex
+    ParseError,
+    SETTINGS_SCHEMA,
+    __defineFunction: defineFunction,
+    __defineMacro: defineMacro,
+    __defineSymbol: defineSymbol,
+    __domTree,
+    __parse: generateParseTree,
+    __renderToDomTree: renderToDomTree,
+    __renderToHTMLTree: renderToHTMLTree,
+    __setFontMetrics: setFontMetrics,
+    default: katex,
+    get render() {
+      return render$2;
+    },
+    renderToString,
+    version: version$1
   }, Symbol.toStringTag, { value: "Module" }));
   var parser$v = function() {
     var o = function(k, v, o2, l) {
@@ -33234,7 +33261,7 @@ You have to call mermaid.initialize.`
       if (pos === "default") {
         edges.defaultStyle = style;
       } else {
-        if (utils$1.isSubstringInArray("fill", style) === -1) {
+        if (utils.isSubstringInArray("fill", style) === -1) {
           style.push("fill:none");
         }
         edges[pos].style = style;
@@ -33323,7 +33350,7 @@ You have to call mermaid.initialize.`
           elem.addEventListener(
             "click",
             function() {
-              utils$1.runFunc(functionName, ...argList);
+              utils.runFunc(functionName, ...argList);
             },
             false
           );
@@ -33334,7 +33361,7 @@ You have to call mermaid.initialize.`
   const setLink$2 = function(ids, linkStr, target) {
     ids.split(",").forEach(function(id2) {
       if (vertices[id2] !== void 0) {
-        vertices[id2].link = utils$1.formatUrl(linkStr, config$3);
+        vertices[id2].link = utils.formatUrl(linkStr, config$3);
         vertices[id2].linkTarget = target;
       }
     });
@@ -45575,7 +45602,7 @@ You have to call mermaid.initialize.`
       let x2 = edge.x;
       let y2 = edge.y;
       if (path2) {
-        const pos = utils$1.calcLabelPosition(path2);
+        const pos = utils.calcLabelPosition(path2);
         log$1.debug(
           "Moving label " + edge.label + " from (",
           x2,
@@ -45599,7 +45626,7 @@ You have to call mermaid.initialize.`
       let x2 = edge.x;
       let y2 = edge.y;
       if (path2) {
-        const pos = utils$1.calcTerminalLabelPosition(edge.arrowTypeStart ? 10 : 0, "start_left", path2);
+        const pos = utils.calcTerminalLabelPosition(edge.arrowTypeStart ? 10 : 0, "start_left", path2);
         x2 = pos.x;
         y2 = pos.y;
       }
@@ -45610,7 +45637,7 @@ You have to call mermaid.initialize.`
       let x2 = edge.x;
       let y2 = edge.y;
       if (path2) {
-        const pos = utils$1.calcTerminalLabelPosition(
+        const pos = utils.calcTerminalLabelPosition(
           edge.arrowTypeStart ? 10 : 0,
           "start_right",
           path2
@@ -45625,7 +45652,7 @@ You have to call mermaid.initialize.`
       let x2 = edge.x;
       let y2 = edge.y;
       if (path2) {
-        const pos = utils$1.calcTerminalLabelPosition(edge.arrowTypeEnd ? 10 : 0, "end_left", path2);
+        const pos = utils.calcTerminalLabelPosition(edge.arrowTypeEnd ? 10 : 0, "end_left", path2);
         x2 = pos.x;
         y2 = pos.y;
       }
@@ -45636,7 +45663,7 @@ You have to call mermaid.initialize.`
       let x2 = edge.x;
       let y2 = edge.y;
       if (path2) {
-        const pos = utils$1.calcTerminalLabelPosition(edge.arrowTypeEnd ? 10 : 0, "end_right", path2);
+        const pos = utils.calcTerminalLabelPosition(edge.arrowTypeEnd ? 10 : 0, "end_right", path2);
         x2 = pos.x;
         y2 = pos.y;
       }
@@ -46255,7 +46282,7 @@ You have to call mermaid.initialize.`
     const svg2 = root2.select(`[id="${id2}"]`);
     const element2 = root2.select("#" + id2 + " g");
     await render(element2, g, ["point", "circle", "cross"], "flowchart", id2);
-    utils$1.insertTitle(svg2, "flowchartTitleText", conf2.titleTopMargin, diagObj.db.getDiagramTitle());
+    utils.insertTitle(svg2, "flowchartTitleText", conf2.titleTopMargin, diagObj.db.getDiagramTitle());
     setupGraphViewbox$1(g, svg2, conf2.diagramPadding, conf2.useMaxWidth);
     diagObj.db.indexNodes("subGraph" + i2);
     if (!conf2.htmlLabels) {
@@ -47710,7 +47737,7 @@ You have to call mermaid.initialize.`
       drawRelationshipFromLayout$1(svg2, rel2, g, firstEntity, diagObj);
     });
     const padding2 = conf$6.diagramPadding;
-    utils$1.insertTitle(svg2, "entityTitleText", conf$6.titleTopMargin, diagObj.db.getDiagramTitle());
+    utils.insertTitle(svg2, "entityTitleText", conf$6.titleTopMargin, diagObj.db.getDiagramTitle());
     const svgBounds = svg2.node().getBBox();
     const width2 = svgBounds.width + padding2 * 2;
     const height = svgBounds.height + padding2 * 2;
@@ -49499,7 +49526,7 @@ You have to call mermaid.initialize.`
     }
     drawArrows(diagram2, allCommitsDict);
     drawCommits(diagram2, allCommitsDict, true);
-    utils$1.insertTitle(
+    utils.insertTitle(
       diagram2,
       "gitTitleText",
       gitGraphConfig.titleTopMargin,
@@ -50673,6 +50700,7 @@ You have to call mermaid.initialize.`
   const fixTaskDates = function(startTime, endTime, dateFormat2, excludes2, includes2) {
     let invalid = false;
     let renderEndTime = null;
+    const maxEndTime = endTime.add(1e4, "d");
     while (startTime <= endTime) {
       if (!invalid) {
         renderEndTime = endTime.toDate();
@@ -50680,6 +50708,11 @@ You have to call mermaid.initialize.`
       invalid = isInvalidDate(startTime, dateFormat2, excludes2, includes2);
       if (invalid) {
         endTime = endTime.add(1, "d");
+        if (endTime > maxEndTime) {
+          throw new Error(
+            "Failed to find a valid date that was not excluded by `excludes` after 10,000 iterations."
+          );
+        }
       }
       startTime = startTime.add(1, "d");
     }
@@ -51002,7 +51035,7 @@ You have to call mermaid.initialize.`
     let rawTask = findTaskById(id2);
     if (rawTask !== void 0) {
       pushFun(id2, () => {
-        utils$1.runFunc(functionName, ...argList);
+        utils.runFunc(functionName, ...argList);
       });
     }
   };
@@ -59434,7 +59467,7 @@ You have to call mermaid.initialize.`
     const { startx, stopx, message } = msgModel;
     const lines = common$1.splitBreaks(message).length;
     const isKatexMsg = hasKatex(message);
-    const textDims = isKatexMsg ? await calculateMathMLDimensions(message, getConfig$1()) : utils$1.calculateTextDimensions(message, messageFont(conf$4));
+    const textDims = isKatexMsg ? await calculateMathMLDimensions(message, getConfig$1()) : utils.calculateTextDimensions(message, messageFont(conf$4));
     if (!isKatexMsg) {
       const lineHeight = textDims.height / lines;
       msgModel.height += lineHeight;
@@ -59470,7 +59503,7 @@ You have to call mermaid.initialize.`
   }
   const drawMessage = async function(diagram2, msgModel, lineStartY, diagObj) {
     const { startx, stopx, starty, message, type: type2, sequenceIndex, sequenceVisible } = msgModel;
-    const textDims = utils$1.calculateTextDimensions(message, messageFont(conf$4));
+    const textDims = utils.calculateTextDimensions(message, messageFont(conf$4));
     const textObj = getTextObj$2();
     textObj.x = startx;
     textObj.y = starty + 10;
@@ -59657,10 +59690,10 @@ You have to call mermaid.initialize.`
     if (msg.id && msg.message && loopWidths[msg.id]) {
       const loopWidth = loopWidths[msg.id].width;
       const textConf = messageFont(conf$4);
-      msg.message = utils$1.wrapLabel(`[${msg.message}]`, loopWidth - 2 * conf$4.wrapPadding, textConf);
+      msg.message = utils.wrapLabel(`[${msg.message}]`, loopWidth - 2 * conf$4.wrapPadding, textConf);
       msg.width = loopWidth;
       msg.wrap = true;
-      const textDims = utils$1.calculateTextDimensions(msg.message, textConf);
+      const textDims = utils.calculateTextDimensions(msg.message, textConf);
       const totalOffset = common$1.getMax(textDims.height, conf$4.labelBoxHeight);
       heightAdjust = postMargin + totalOffset;
       log$1.debug(`${totalOffset} - ${msg.message}`);
@@ -60054,8 +60087,8 @@ You have to call mermaid.initialize.`
         const isNote = msg.placement !== void 0;
         const isMessage = !isNote;
         const textFont = isNote ? noteFont(conf$4) : messageFont(conf$4);
-        const wrappedMessage = msg.wrap ? utils$1.wrapLabel(msg.message, conf$4.width - 2 * conf$4.wrapPadding, textFont) : msg.message;
-        const messageDimensions = hasKatex(wrappedMessage) ? await calculateMathMLDimensions(msg.message, getConfig$1()) : utils$1.calculateTextDimensions(wrappedMessage, textFont);
+        const wrappedMessage = msg.wrap ? utils.wrapLabel(msg.message, conf$4.width - 2 * conf$4.wrapPadding, textFont) : msg.message;
+        const messageDimensions = hasKatex(wrappedMessage) ? await calculateMathMLDimensions(msg.message, getConfig$1()) : utils.calculateTextDimensions(wrappedMessage, textFont);
         const messageWidth = messageDimensions.width + 2 * conf$4.wrapPadding;
         if (isMessage && msg.from === actor.nextActor) {
           maxMessageWidthPerActor[msg.to] = common$1.getMax(
@@ -60109,7 +60142,7 @@ You have to call mermaid.initialize.`
     let requiredPopupWidth = 0;
     const textFont = actorFont(conf$4);
     for (const key in actor.links) {
-      const labelDimensions = utils$1.calculateTextDimensions(key, textFont);
+      const labelDimensions = utils.calculateTextDimensions(key, textFont);
       const labelWidth = labelDimensions.width + 2 * conf$4.wrapPadding + 2 * conf$4.boxMargin;
       if (requiredPopupWidth < labelWidth) {
         requiredPopupWidth = labelWidth;
@@ -60122,13 +60155,13 @@ You have to call mermaid.initialize.`
     for (const prop of Object.keys(actors2)) {
       const actor = actors2[prop];
       if (actor.wrap) {
-        actor.description = utils$1.wrapLabel(
+        actor.description = utils.wrapLabel(
           actor.description,
           conf$4.width - 2 * conf$4.wrapPadding,
           actorFont(conf$4)
         );
       }
-      const actDims = hasKatex(actor.description) ? await calculateMathMLDimensions(actor.description, getConfig$1()) : utils$1.calculateTextDimensions(actor.description, actorFont(conf$4));
+      const actDims = hasKatex(actor.description) ? await calculateMathMLDimensions(actor.description, getConfig$1()) : utils.calculateTextDimensions(actor.description, actorFont(conf$4));
       actor.width = actor.wrap ? conf$4.width : common$1.getMax(conf$4.width, actDims.width + 2 * conf$4.wrapPadding);
       actor.height = actor.wrap ? common$1.getMax(actDims.height, conf$4.height) : conf$4.height;
       maxHeight = common$1.getMax(maxHeight, actor.height);
@@ -60157,9 +60190,9 @@ You have to call mermaid.initialize.`
       }, 0);
       totalWidth -= 2 * conf$4.boxTextMargin;
       if (box.wrap) {
-        box.name = utils$1.wrapLabel(box.name, totalWidth - 2 * conf$4.wrapPadding, textFont);
+        box.name = utils.wrapLabel(box.name, totalWidth - 2 * conf$4.wrapPadding, textFont);
       }
-      const boxMsgDimensions = utils$1.calculateTextDimensions(box.name, textFont);
+      const boxMsgDimensions = utils.calculateTextDimensions(box.name, textFont);
       maxBoxHeight = common$1.getMax(boxMsgDimensions.height, maxBoxHeight);
       const minWidth = common$1.getMax(totalWidth, boxMsgDimensions.width + 2 * conf$4.wrapPadding);
       box.margin = conf$4.boxTextMargin;
@@ -60175,8 +60208,8 @@ You have to call mermaid.initialize.`
     const startx = actors2[msg.from].x;
     const stopx = actors2[msg.to].x;
     const shouldWrap = msg.wrap && msg.message;
-    let textDimensions = hasKatex(msg.message) ? await calculateMathMLDimensions(msg.message, getConfig$1()) : utils$1.calculateTextDimensions(
-      shouldWrap ? utils$1.wrapLabel(msg.message, conf$4.width, noteFont(conf$4)) : msg.message,
+    let textDimensions = hasKatex(msg.message) ? await calculateMathMLDimensions(msg.message, getConfig$1()) : utils.calculateTextDimensions(
+      shouldWrap ? utils.wrapLabel(msg.message, conf$4.width, noteFont(conf$4)) : msg.message,
       noteFont(conf$4)
     );
     const noteModel = {
@@ -60201,8 +60234,8 @@ You have to call mermaid.initialize.`
       );
       noteModel.startx = startx - noteModel.width + (actors2[msg.from].width - conf$4.actorMargin) / 2;
     } else if (msg.to === msg.from) {
-      textDimensions = utils$1.calculateTextDimensions(
-        shouldWrap ? utils$1.wrapLabel(
+      textDimensions = utils.calculateTextDimensions(
+        shouldWrap ? utils.wrapLabel(
           msg.message,
           common$1.getMax(conf$4.width, actors2[msg.from].width),
           noteFont(conf$4)
@@ -60220,7 +60253,7 @@ You have to call mermaid.initialize.`
       noteModel.startx = startx < stopx ? startx + actors2[msg.from].width / 2 - conf$4.actorMargin / 2 : stopx + actors2[msg.to].width / 2 - conf$4.actorMargin / 2;
     }
     if (shouldWrap) {
-      noteModel.message = utils$1.wrapLabel(
+      noteModel.message = utils.wrapLabel(
         msg.message,
         noteModel.width - 2 * conf$4.wrapPadding,
         noteFont(conf$4)
@@ -60266,13 +60299,13 @@ You have to call mermaid.initialize.`
     const allBounds = [fromLeft, fromRight, toLeft, toRight];
     const boundedWidth = Math.abs(startx - stopx);
     if (msg.wrap && msg.message) {
-      msg.message = utils$1.wrapLabel(
+      msg.message = utils.wrapLabel(
         msg.message,
         common$1.getMax(boundedWidth + 2 * conf$4.wrapPadding, conf$4.width),
         messageFont(conf$4)
       );
     }
-    const msgDims = utils$1.calculateTextDimensions(msg.message, messageFont(conf$4));
+    const msgDims = utils.calculateTextDimensions(msg.message, messageFont(conf$4));
     return {
       width: common$1.getMax(
         msg.wrap ? 0 : msgDims.width + 2 * conf$4.wrapPadding,
@@ -60296,7 +60329,7 @@ You have to call mermaid.initialize.`
     const stack = [];
     let current, noteModel, msgModel;
     for (const msg of messages) {
-      msg.id = utils$1.random({ length: 10 });
+      msg.id = utils.random({ length: 10 });
       switch (msg.type) {
         case diagObj.db.LINETYPE.LOOP_START:
         case diagObj.db.LINETYPE.ALT_START:
@@ -61553,7 +61586,7 @@ You have to call mermaid.initialize.`
         id2 = MERMAID_DOM_ID_PREFIX + id2;
       }
       if (classes$2[id2] !== void 0) {
-        classes$2[id2].link = utils$1.formatUrl(linkStr, config2);
+        classes$2[id2].link = utils.formatUrl(linkStr, config2);
         if (config2.securityLevel === "sandbox") {
           classes$2[id2].linkTarget = "_top";
         } else if (typeof target === "string") {
@@ -61604,7 +61637,7 @@ You have to call mermaid.initialize.`
           elem.addEventListener(
             "click",
             function() {
-              utils$1.runFunc(functionName, ...argList);
+              utils.runFunc(functionName, ...argList);
             },
             false
           );
@@ -61943,18 +61976,18 @@ g.classGroup line {
     }
     let x2, y2;
     const l = path2.points.length;
-    let labelPosition = utils$1.calcLabelPosition(path2.points);
+    let labelPosition = utils.calcLabelPosition(path2.points);
     x2 = labelPosition.x;
     y2 = labelPosition.y;
     let p1_card_x, p1_card_y;
     let p2_card_x, p2_card_y;
     if (l % 2 !== 0 && l > 1) {
-      let cardinality_1_point = utils$1.calcCardinalityPosition(
+      let cardinality_1_point = utils.calcCardinalityPosition(
         relation.relation.type1 !== "none",
         path2.points,
         path2.points[0]
       );
-      let cardinality_2_point = utils$1.calcCardinalityPosition(
+      let cardinality_2_point = utils.calcCardinalityPosition(
         relation.relation.type2 !== "none",
         path2.points,
         path2.points[l - 1]
@@ -62463,7 +62496,7 @@ g.classGroup line {
       "classDiagram",
       id2
     );
-    utils$1.insertTitle(svg2, "classTitleText", (conf2 == null ? void 0 : conf2.titleTopMargin) ?? 5, diagObj.db.getDiagramTitle());
+    utils.insertTitle(svg2, "classTitleText", (conf2 == null ? void 0 : conf2.titleTopMargin) ?? 5, diagObj.db.getDiagramTitle());
     setupGraphViewbox$1(g, svg2, conf2 == null ? void 0 : conf2.diagramPadding, conf2 == null ? void 0 : conf2.useMaxWidth);
     if (!(conf2 == null ? void 0 : conf2.htmlLabels)) {
       const doc = securityLevel === "sandbox" ? sandboxElement.nodes()[0].contentDocument : document;
@@ -64093,7 +64126,7 @@ g.stateGroup line {
     );
     if (relation.title !== void 0) {
       const label = elem.append("g").attr("class", "stateLabel");
-      const { x: x2, y: y2 } = utils$1.calcLabelPosition(path2.points);
+      const { x: x2, y: y2 } = utils.calcLabelPosition(path2.points);
       const rows = common$1.getRows(relation.title);
       let titleHeight = 0;
       const titleRows = [];
@@ -64608,7 +64641,7 @@ g.stateGroup line {
     const element2 = root2.select("#" + id2 + " g");
     await render(element2, g, ["barb"], CSS_DIAGRAM, id2);
     const padding2 = 8;
-    utils$1.insertTitle(svg2, "statediagramTitleText", conf2.titleTopMargin, diag.db.getDiagramTitle());
+    utils.insertTitle(svg2, "statediagramTitleText", conf2.titleTopMargin, diag.db.getDiagramTitle());
     const bounds2 = svg2.node().getBBox();
     const width2 = bounds2.width + padding2 * 2;
     const height = bounds2.height + padding2 * 2;
@@ -168669,7 +168702,7 @@ g.stateGroup line {
             return nhood.hasElementWithId(ele.id());
           });
         },
-        contains: function contains2(collection2) {
+        contains: function contains(collection2) {
           collection2 = this.cy().collection(collection2);
           var self2 = this;
           return collection2.every(function(ele) {
