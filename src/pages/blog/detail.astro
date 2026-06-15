@@ -82,8 +82,14 @@ if (!markdownRaw) {
         background: rgb(16 185 129); z-index: 9999;
         box-shadow: 0 0 6px rgba(16,185,129,0.6);
       }
-      /* 文章内图片优化 */
-      .article img { border-radius: 0.75rem; }
+      /* 文章内图片优化：限制最大宽度、等比缩放、居中 */
+      .article img {
+        border-radius: 0.75rem;
+        display: block;
+        max-width: min(100%, 760px);
+        height: auto;
+        margin: 1.5rem auto;
+      }
       /* 目录当前项高亮 */
       .toc a.active { color: rgb(16 185 129); }
       /* 代码块复制按钮 */
