@@ -3,6 +3,8 @@ import path from "path";
 import { minify } from "terser";
 import config from "../astro.config.mjs";
 import https from "https";
+import { genThumbs } from "./gen-thumbs.js";
+import { genRemoteThumbs } from "./gen-remote-thumbs.js";
 
 // 安全复制目录（仅拷贝 .js/.mjs/.css/.map）
 function copyDir(src, dest) {
@@ -220,6 +222,16 @@ async function main() {
   // 下载并缓存前端第三方库到 public/libs/vendor（仅缺失或显式刷新时下载）
   await ensureVendors();
   console.log("Vendor libraries ready in public/libs/vendor (skip download if already present)");
+
+  // 为卡片封面生成 webp 缩略图（增量，原图保留给灯箱放大）
+  await genThumbs();
+
+  // 抓首页接口、为博客/游玩远程封面生成本地缩略图 + 映射表（接口失败时静默跳过）
+  try {
+    await genRemoteThumbs();
+  } catch (e) {
+    console.warn("Remote thumbnails skipped:", e?.message);
+  }
 }
 
 main().catch(console.error);

@@ -2,6 +2,12 @@
 // src/pages/cocktail.astro
 import StickyNav from "../components/sticky_nav.astro";
 import { COCKTAIL_FAMILIES } from "../data/cocktails";
+
+// 卡片封面自动用 webp 缩略图（由 build/gen-thumbs.js 增量生成到 thumbs/ 子目录）；
+// 原图路径放在 data-full，点击放大时灯箱才加载原图。
+function thumbOf(src: string): string {
+  return src ? src.replace(/\/([^/]+)\.(?:png|jpe?g|webp)$/i, "/thumbs/$1.webp") : src;
+}
 ---
 
 <!doctype html>
@@ -200,7 +206,7 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
                   {/* 图片区 */}
                   <div class="cp-photo">
                     {recipe.image
-                      ? <img src={recipe.image} alt={recipe.name} onclick="cpZoom(this)" />
+                      ? <img src={thumbOf(recipe.image)} data-full={recipe.image} alt={recipe.name} loading="lazy" onclick="cpZoom(this)" />
                       : (
                         <div class="cp-photo-ph">
                           <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -331,7 +337,7 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
                   <div class="cp-tea-card">
                     <div class="cp-tea-photo">
                       {recipe.image
-                        ? <img src={recipe.image} alt={recipe.name} onclick="cpZoom(this)" />
+                        ? <img src={thumbOf(recipe.image)} data-full={recipe.image} alt={recipe.name} loading="lazy" onclick="cpZoom(this)" />
                         : <span>{['🍵','🌿','🌸','🍑','🍓','🍊','🔥','☕','🍹'][
                             family.recipes.indexOf(recipe) % 9
                           ]}</span>
@@ -404,7 +410,8 @@ import { COCKTAIL_FAMILIES } from "../data/cocktails";
       function cpZoom(img: HTMLImageElement) {
         const box = document.getElementById('cpLightbox')!;
         const big = box.querySelector('img') as HTMLImageElement;
-        big.src = img.src;
+        // 优先加载原图（data-full），缩略图仅作封面
+        big.src = img.dataset.full || img.src;
         big.alt = img.alt;
         box.classList.add('open');
         document.body.style.overflow = 'hidden';

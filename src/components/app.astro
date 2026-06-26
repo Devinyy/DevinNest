@@ -15,7 +15,7 @@ const cocktailCard: DiaryCardItem = {
   title: "🍹 调酒配方本",
   url: "/cocktail",
   bgStyle:
-    "bg-[url('/images/cocktail/jrwx.png')] bg-cover bg-center shadow-accent hover:shadow-violet-300",
+    "bg-[url('/images/cocktail/thumbs/jrwx.webp')] bg-cover bg-center shadow-accent hover:shadow-violet-300",
   textStyle: "text-white",
 };
 
@@ -271,9 +271,17 @@ const diaryCards: DiaryCardItem[] = [cocktailCard, ...info.diaryCards];
   import { homeApi } from "../api/home";
   import type { DiaryCardItem } from "../api/home";
   import { secureUrl } from "../utils/secure-url";
+  import remoteThumbs from "../data/remote-thumbs.json";
 
   const esc = (s = "") =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  // 封面优先用构建期生成的本地缩略图（见 build/gen-remote-thumbs.js），缺失则回退原图
+  const thumbs = remoteThumbs as Record<string, string>;
+  const coverSrc = (raw: string): string => {
+    const s = secureUrl(raw);
+    return thumbs[s] || s;
+  };
 
   // 复刻 Card_2x3 的渲染（含 bg-[url('...')] → 内联 background-image 的处理）
   function card2x3(card: DiaryCardItem): string {
@@ -281,7 +289,7 @@ const diaryCards: DiaryCardItem[] = [cocktailCard, ...info.diaryCards];
     let inlineStyle = "";
     const m = bgClass.match(/bg-\[url\(['"]?(.*?)['"]?\)\]/);
     if (m) {
-      inlineStyle = `background-image: url(${secureUrl(m[1])});`;
+      inlineStyle = `background-image: url(${coverSrc(m[1])});`;
       bgClass = bgClass.replace(m[0], "").trim();
     }
     return `

@@ -42,14 +42,22 @@
   import { homeApi } from "../api/home";
   import type { LatestArticleItem } from "../api/home";
   import { secureUrl } from "../utils/secure-url";
+  import remoteThumbs from "../data/remote-thumbs.json";
 
   const esc = (s = "") =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+  // 封面优先用构建期生成的本地缩略图（见 build/gen-remote-thumbs.js），缺失则回退原图
+  const thumbs = remoteThumbs as Record<string, string>;
+  const coverSrc = (rawCover: string): string => {
+    const s = secureUrl(rawCover);
+    return thumbs[s] || s;
+  };
+
   function articleCard(article: LatestArticleItem): string {
     const title = esc(article.title);
     const cover = article.cover
-      ? `<figure class="w-full h-40 md:h-52"><img src="${esc(secureUrl(article.cover))}" alt="${title}" loading="lazy" class="w-full h-full object-cover object-center" /></figure>`
+      ? `<figure class="w-full h-40 md:h-52"><img src="${esc(coverSrc(article.cover))}" alt="${title}" loading="lazy" class="w-full h-full object-cover object-center" /></figure>`
       : `<img src="https://dummyimage.com/395x208/9c9c9c/fff.png&text=${encodeURIComponent(article.title)}" alt="${title}" class="w-full h-full object-cover object-center" />`;
     const subdesc = article.subdesc
       ? `<p class="mt-1 text-xs sm:text-sm text-gray-300 line-clamp-2 overflow-hidden">${esc(article.subdesc)}</p>`
