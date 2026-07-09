@@ -121,6 +121,30 @@ export default {
   },
   projectCards: [
     {
+      title: "DevinHarness",
+      desc: "AI 研发执行框架",
+      fulldesc: "用于规范、驱动和沉淀项目研发流程的 AI 框架",
+      subdesc: "Devinyy/project-harness",
+      url: "https://github.com/Devinyy/project-harness",
+      btnStyle: "bg-[#4F8FCE] hover:bg-[#6EA8E8] text-white",
+      btnText: "看看 →",
+      textStyle: "text-white",
+      bgStyle:
+        "bg-[#326FA8] shadow-[#326FA8]/75 hover:bg-[#326FA8]/75 hover:shadow-[#326FA8]",
+    },
+    {
+      title: "devin-skills",
+      desc: "个人 Skills 集合",
+      fulldesc: "个人 Skills 集合",
+      subdesc: "Devinyy/devin-skills",
+      url: "https://github.com/Devinyy/devin-skills",
+      btnStyle: "bg-[#7D6AE8] hover:bg-[#9587F0] text-white",
+      btnText: "看看 →",
+      textStyle: "text-white",
+      bgStyle:
+        "bg-[#5B4BC4] shadow-[#5B4BC4]/75 hover:bg-[#5B4BC4]/75 hover:shadow-[#5B4BC4]",
+    },
+    {
       title: "Framework",
       desc: "Laya3D游戏框架",
       fulldesc: "Laya3D游戏框架",
@@ -133,34 +157,12 @@ export default {
         "bg-[#3DA88B] shadow-[#3DA88B]/75 hover:bg-[#3DA88B]/75 hover:shadow-[#3DA88B]",
     },
     {
-      title: "个人小窝",
-      desc: "Nest 2.0",
-      fulldesc: "个人网站2.0，焕然一新",
-      subdesc: "Astro/NestJS",
-      url: "https://github.com/Devinyy/Nest",
-      btnStyle: "bg-[#FABA81] hover:bg-[#FDD5A7] text-white",
-      btnText: "探探~ 🔍",
-      textStyle: "text-white",
-      bgStyle:
-        "bg-[#f1995a] shadow-[#f1995a]/75 hover:bg-[#f1995a]/75 hover:shadow-[#f1995a]",
-    },
-    {
-      title: "后台管理系统",
-      desc: "个人网站后台",
-      fulldesc: "给头像戴顶毕业帽，让我们跃入人海",
-      subdesc: "React",
-      url: "https://github.com/Devinyy/react-blog-admin",
-      btnText: "瞧瞧→ 👀",
-      bgStyle:
-        "bg-primary hover:bg-primary-focus shadow-accent hover:shadow-gray-500 max-sm:hidden",
-    },
-    {
       title: "口袋Wiki",
       desc: "口袋精灵2助手",
       fulldesc: "致敬童年回忆，留住那个夏天",
       subdesc: "wiki网站",
-      url: "",
-      btnText: "敬请期待 🫡",
+      url: "https://kdyg2.kdyg2-wiki.xyz/#/",
+      btnText: "去看看 →",
       bgStyle:
         "bg-primary hover:bg-primary-focus shadow-accent hover:shadow-gray-500 max-sm:hidden",
     },
