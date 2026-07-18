@@ -82,8 +82,14 @@ if (!markdownRaw) {
         background: rgb(16 185 129); z-index: 9999;
         box-shadow: 0 0 6px rgba(16,185,129,0.6);
       }
-      /* 文章内图片优化 */
-      .article img { border-radius: 0.75rem; }
+      /* 文章内图片优化：限制最大宽度、等比缩放、居中 */
+      .article img {
+        border-radius: 0.75rem;
+        display: block;
+        max-width: min(100%, 760px);
+        height: auto;
+        margin: 1.5rem auto;
+      }
       /* 目录当前项高亮 */
       .toc a.active { color: rgb(16 185 129); }
       /* 代码块复制按钮 */
@@ -234,8 +240,8 @@ if (!markdownRaw) {
           </div>
         </article>
 
-        <!-- 目录（右侧） -->
-        <aside class="lg:col-span-1 card glass-card">
+        <!-- 目录（右侧，桌面端吸顶：滚动时固定在导航栏下方，超长则内部滚动） -->
+        <aside class="lg:col-span-1 card glass-card lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
           <div class="card-body">
             <h3 class="text-lg md:text-xl font-bold mb-2">目录</h3>
             <nav id="toc" class="toc text-sm space-y-2"></nav>
@@ -260,6 +266,7 @@ if (!markdownRaw) {
 
     <script>
       import { blogApi } from "../../api/blog";
+      import { secureUrl } from "../../utils/secure-url";
 
       // 定义 window 上的自定义属性类型
       declare global {
@@ -322,7 +329,7 @@ if (!markdownRaw) {
                 if (catEl) catEl.textContent = blog.category?.name || '默认';
 
                 const coverEl = document.getElementById('article-cover') as HTMLImageElement | null;
-                if (coverEl && blog.cover) coverEl.src = blog.cover;
+                if (coverEl && blog.cover) coverEl.src = secureUrl(blog.cover);
 
                 const tagsContainer = document.getElementById('article-tags-container');
                 if (tagsContainer && blog.tags) {
@@ -377,6 +384,12 @@ if (!markdownRaw) {
             mdEl.textContent = markdownContent || '';
           }
         }
+
+        // 把所有 http://devinnest-api.top 图片(封面+正文)升级为 https，消除混合内容("不安全")
+        document.querySelectorAll('img').forEach((im) => {
+          const s = im.getAttribute('src');
+          if (s) { const u = secureUrl(s); if (u !== s) im.setAttribute('src', u); }
+        });
 
         // 阅读进度
         function updateProgress(){

@@ -1,143 +1,99 @@
----
-import { Image as AstroImage } from "astro:assets";
-import { homeApi, type LatestArticlesResponse } from "../api/home";
-
-let latestArticles: LatestArticlesResponse | null = null;
-try {
-  latestArticles = await homeApi.getLatestArticles();
-} catch (error) {
-  console.error("Failed to fetch latest articles:", error);
-}
----
-
 <div
   class="card max-lg:card-compact rounded-2xl shadow-xl shadow-accent hover:bg-primary-focus hover:shadow-gray-500 bg-primary w-full lg:max-w-[54rem] min-h-[6rem] mb-8 group"
 >
   <div class="card-body">
-    {
-      !latestArticles || latestArticles.articles.length === 0 ? (
-        <div class="text-center text-gray-400 py-10">
-          <p>暂无文章内容</p>
+    <div class="tab-content block">
+      <div
+        id="latest-articles-grid"
+        class="grid grid-cols-1 sm:grid-cols-2 gap-[10px]"
+      >
+        <div class="col-span-full text-center text-gray-400 py-10">
+          <p>加载中…</p>
         </div>
-      ) : (
-        <div class="tab-content block">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-[10px]">
-            {latestArticles.articles.map((article) => (
-              <a
-                class="card rounded-xl bg-neutral hover:bg-base-300 overflow-hidden w-full"
-                href={article.url}
-                target="_blank"
-              >
-                <!-- 封面：有图显示图片；无图显示占位 -->
-                {article.cover ? (
-                  <figure class="w-full h-40 md:h-52">
-                    <AstroImage src={article.cover} width={600} height={400} alt={article.title} class="w-full h-full object-cover object-center" />
-                  </figure>
-                ) : (
-                    <AstroImage src={'https://dummyimage.com/395x208/9c9c9c/fff.png&text='+ article.title} width={395} height={208} alt={article.title} class="w-full h-full object-cover object-center" />
-                  
-                )}
+      </div>
 
-                <div class="card-body p-3 sm:p-4">
-                  <!-- 标题：移动端单行展示 -->
-                  <h3 class="text-sm sm:text-base md:text-lg font-bold truncate">{article.title}</h3>
-
-                  <!-- 摘要（可选） -->
-                  {article.subdesc && (
-                    <p class="mt-1 text-xs sm:text-sm text-gray-300 line-clamp-2 overflow-hidden">{article.subdesc}</p>
-                  )}
-
-                  <!-- 底部栏：元信息 + 按钮 -->
-                  <div class="flex justify-between items-center mt-2">
-                    <!-- 元信息 -->
-                    <div class="flex items-center gap-3 text-xs text-gray-400">
-                      <span class="inline-flex items-center gap-1">
-                        <span class="i-calendar">📅</span>
-                        {article.time}
-                      </span>
-                      {article.views && (
-                        <span class="inline-flex items-center gap-1">
-                          <span class="i-eye">👁️</span>
-                          {article.views}
-                        </span>
-                      )}
-                    </div>
-
-                    <!-- 按钮 -->
-                    <button
-                      class:list={[
-                        "btn btn-xs sm:btn-sm rounded-lg border-0",
-                        "bg-primary shadow-accent hover:bg-primary-focus hover:shadow-gray-500",
-                        "text-white",
-                      ]}
-                    >
-                      开箱! 📦
-                    </button>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-
-          <div class="max-h-0 overflow-hidden opacity-0 group-hover:max-h-24 group-hover:opacity-100 transition-all duration-500 ease-in-out">
-            <div class="pt-4" />
-            <div class="card-actions justify-center pb-2">
-              <a
-                class="btn btn-outline border-white text-white btn-wide rounded-full gap-2 group/btn hover:bg-white hover:text-neutral hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] transition-all duration-300"
-                href="/bloglist"
-              >
-                <span>查看更多</span>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  class="h-5 w-5 transform transition-transform duration-300 group-hover/btn:translate-x-1" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </a>
-            </div>
-          </div>
+      <div
+        class="max-h-0 overflow-hidden opacity-0 group-hover:max-h-24 group-hover:opacity-100 transition-all duration-500 ease-in-out"
+      >
+        <div class="pt-4"></div>
+        <div class="card-actions justify-center pb-2">
+          <a
+            class="btn btn-outline border-white text-white btn-wide rounded-full gap-2 group/btn hover:bg-white hover:text-neutral hover:border-white hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] transition-all duration-300"
+            href="/bloglist"
+          >
+            <span>查看更多</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 transform transition-transform duration-300 group-hover/btn:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
         </div>
-      )
-    }
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const tabs = document.querySelectorAll(".tab");
-    const contents = document.querySelectorAll(".tab-content");
+  import { homeApi } from "../api/home";
+  import type { LatestArticleItem } from "../api/home";
+  import { secureUrl } from "../utils/secure-url";
+  import remoteThumbs from "../data/remote-thumbs.json";
 
-    function setActiveTab(index: number) {
-      tabs.forEach((tab, i) => {
-        if (i === index) {
-          tab.classList.add("tab-active");
-        } else {
-          tab.classList.remove("tab-active");
-        }
-      });
+  const esc = (s = "") =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-      contents.forEach((content, i) => {
-        if (i === index) {
-          content.classList.remove("hidden");
-          content.classList.add("block");
-        } else {
-          content.classList.add("hidden");
-          content.classList.remove("block");
-        }
-      });
+  // 封面优先用构建期生成的本地缩略图（见 build/gen-remote-thumbs.js），缺失则回退原图
+  const thumbs = remoteThumbs as Record<string, string>;
+  const coverSrc = (rawCover: string): string => {
+    const s = secureUrl(rawCover);
+    return thumbs[s] || s;
+  };
+
+  function articleCard(article: LatestArticleItem): string {
+    const title = esc(article.title);
+    const cover = article.cover
+      ? `<figure class="w-full h-40 md:h-52"><img src="${esc(coverSrc(article.cover))}" alt="${title}" loading="lazy" class="w-full h-full object-cover object-center" /></figure>`
+      : `<img src="https://dummyimage.com/395x208/9c9c9c/fff.png&text=${encodeURIComponent(article.title)}" alt="${title}" class="w-full h-full object-cover object-center" />`;
+    const subdesc = article.subdesc
+      ? `<p class="mt-1 text-xs sm:text-sm text-gray-300 line-clamp-2 overflow-hidden">${esc(article.subdesc)}</p>`
+      : "";
+    const views = article.views
+      ? `<span class="inline-flex items-center gap-1"><span>👁️</span>${article.views}</span>`
+      : "";
+    return `
+      <a class="card rounded-xl bg-neutral hover:bg-base-300 overflow-hidden w-full" href="${esc(article.url)}" target="_blank">
+        ${cover}
+        <div class="card-body p-3 sm:p-4">
+          <h3 class="text-sm sm:text-base md:text-lg font-bold truncate">${title}</h3>
+          ${subdesc}
+          <div class="flex justify-between items-center mt-2">
+            <div class="flex items-center gap-3 text-xs text-gray-400">
+              <span class="inline-flex items-center gap-1"><span>📅</span>${esc(article.time)}</span>
+              ${views}
+            </div>
+            <button class="btn btn-xs sm:btn-sm rounded-lg border-0 bg-primary shadow-accent hover:bg-primary-focus hover:shadow-gray-500 text-white">开箱! 📦</button>
+          </div>
+        </div>
+      </a>`;
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const grid = document.getElementById("latest-articles-grid");
+    if (!grid) return;
+    try {
+      const data = await homeApi.getLatestArticles();
+      const articles = data?.articles ?? [];
+      grid.innerHTML = articles.length
+        ? articles.map(articleCard).join("")
+        : `<div class="col-span-full text-center text-gray-400 py-10"><p>暂无文章内容</p></div>`;
+    } catch (error) {
+      console.error("Failed to fetch latest articles:", error);
+      grid.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10"><p>加载失败，请稍后重试</p></div>`;
     }
-
-    tabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const attr = tab.getAttribute("data-tab-index");
-        const index = attr ? parseInt(attr) : 0;
-        setActiveTab(index);
-      });
-    });
-
-    setActiveTab(0);
   });
 </script>
