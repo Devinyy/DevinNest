@@ -61,6 +61,15 @@ test("blog archive refreshes its timeline from the current API", async () => {
   assert.match(list, /id="timeline-groups"/);
 });
 
+test("runtime timeline refresh keeps the timeline visuals and recent node state", async () => {
+  const list = await source("src/pages/bloglist.astro");
+
+  assert.match(list, /:global\(\.timeline\)/);
+  assert.match(list, /:global\(\.timeline-item\)::before/);
+  assert.match(list, /function isRecentTimelinePost\(item, year\)/);
+  assert.match(list, /timeline-item \$\{isRecentTimelinePost\(item, year\) \? 'is-current-year' : ''\}/);
+});
+
 test("blog archive refreshes categories, tags, and counts with visible fallback status", async () => {
   const list = await source("src/pages/bloglist.astro");
 

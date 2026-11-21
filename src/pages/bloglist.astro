@@ -169,21 +169,21 @@ declare global {
         font-family: "MaokenZhuyuanTi";
       }
       /* 时间线：左侧竖线与节点样式 */
-      .timeline {
+      :global(.timeline) {
         position: relative;
         padding-left: 1.25rem; /* 20px */
         border-left: 2px solid rgba(255,255,255,0.08);
       }
       /* 今年：左侧竖线绿色 */
-      .timeline-current {
+      :global(.timeline-current) {
         border-left-color: rgb(16 185 129); /* emerald-500 */
       }
-      .timeline-item {
+      :global(.timeline-item) {
         position: relative;
         padding-left: 1rem; /* 16px */
         margin-bottom: 0.75rem; /* 12px */
       }
-      .timeline-item::before {
+      :global(.timeline-item)::before {
         content: "";
         position: absolute;
         left: -0.39rem;
@@ -196,7 +196,7 @@ declare global {
         box-shadow: 0 0 0 3px rgba(156,163,175,0.25);
       }
       /* 当前年份：绿色点表示现在 */
-      .timeline-item.is-current-year::before {
+      :global(.timeline-item.is-current-year)::before {
         background-color: rgb(16 185 129); /* emerald-500 */
         box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
       }
@@ -429,6 +429,16 @@ declare global {
             });
         }
 
+        function isRecentTimelinePost(item, year) {
+          if (!year || year !== new Date().getFullYear()) return false;
+          const date = new Date(String(item?.time || ''));
+          if (Number.isNaN(date.getTime())) return false;
+          const end = new Date(date.getTime());
+          end.setMonth(end.getMonth() + 6);
+          end.setHours(23, 59, 59, 999);
+          return end >= new Date();
+        }
+
         function renderCategoryStats(stats, total, posts = getAllArticles()) {
           if (!(categoryListEl instanceof HTMLElement)) return;
           const categoryCounts = new Map();
@@ -511,7 +521,7 @@ declare global {
             const currentClass = year === new Date().getFullYear() ? 'text-emerald-400' : 'text-gray-300';
             const lineClass = year === new Date().getFullYear() ? 'timeline-current' : '';
             const rows = items.map((item) => `
-              <div class="timeline-item" data-category="${escapeHtml(item.category)}" data-tags="${escapeHtml(item.tags.join(','))}">
+              <div class="timeline-item ${isRecentTimelinePost(item, year) ? 'is-current-year' : ''}" data-category="${escapeHtml(item.category)}" data-tags="${escapeHtml(item.tags.join(','))}">
                 <div class="flex items-start gap-3 text-sm md:text-base">
                   <span class="text-gray-400 w-16 shrink-0">${escapeHtml(year ? String(item.time).slice(5) : item.time)}</span>
                   <a href="${articleHref(item.blogId)}" class="hover:text-white text-gray-200">${escapeHtml(item.title)}</a>
