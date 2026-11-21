@@ -3,13 +3,13 @@ import path from "path";
 import config from "../astro.config.mjs";
 
 const mode = config.siteMode;
-const site = config.site;
 const indexHtmlPath = path.resolve("./dist/index.html");
 const indexHtml = fs.readFileSync(indexHtmlPath, "utf-8");
 
-// updateCSSPaths
-const regex = /\/_astro\/(.*)\.css/;
-let updatedIndexHtml = indexHtml.replace(regex, `${site}/_astro/$1.css`);
+// Astro emits root-relative asset URLs (/_astro/...). Keep them on the same
+// origin so local previews and each deployment use the CSS generated beside
+// the current HTML instead of a stale stylesheet from another deployment.
+let updatedIndexHtml = indexHtml;
 
 // change gtag by mode
 const gtags = {

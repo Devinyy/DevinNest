@@ -1,3 +1,19 @@
+---
+import { getBuildBlogSnapshot } from "../data/blog_build_snapshot";
+
+let staticArticleIds: string[] = [];
+try {
+  const snapshot = await getBuildBlogSnapshot();
+  staticArticleIds = snapshot.articles
+    .map((article) => String(article.id || ""))
+    .filter(Boolean);
+} catch (error) {
+  // The homepage can still use the legacy detail URL when the build-time API
+  // is unavailable. No runtime article should be pointed at a missing page.
+  console.warn("Failed to collect static article routes:", error);
+}
+---
+
 <div
   class="card max-lg:card-compact rounded-2xl shadow-xl shadow-accent hover:bg-primary-focus hover:shadow-gray-500 bg-primary w-full lg:max-w-[54rem] min-h-[6rem] mb-8 group"
 >
@@ -65,8 +81,9 @@
     const views = article.views
       ? `<span class="inline-flex items-center gap-1"><span>👁️</span>${article.views}</span>`
       : "";
+    const href = articleHref(article);
     return `
-      <a class="card rounded-xl bg-neutral hover:bg-base-300 overflow-hidden w-full" href="${esc(article.url)}" target="_blank">
+      <a class="card rounded-xl bg-neutral hover:bg-base-300 overflow-hidden w-full" href="${esc(href)}" target="_blank">
         ${cover}
         <div class="card-body p-3 sm:p-4">
           <h3 class="text-sm sm:text-base md:text-lg font-bold truncate">${title}</h3>
@@ -80,6 +97,39 @@
           </div>
         </div>
       </a>`;
+  }
+
+  function articleIdFromUrl(rawUrl: string): string {
+    try {
+      return new URL(rawUrl, window.location.origin).searchParams.get("id") || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function legacyArticleHref(id: string): string {
+    return `/blog/detail?id=${encodeURIComponent(id)}`;
+  }
+
+  const staticArticleIdSet = new Set<string>(
+    (() => {
+      const script = document.getElementById("static-article-ids");
+      try {
+        const parsed = JSON.parse(script?.textContent || "[]");
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+      } catch {
+        return [];
+      }
+    })(),
+  );
+
+  function articleHref(article: LatestArticleItem): string {
+    const rawUrl = article.url || "";
+    const id = articleIdFromUrl(rawUrl);
+    if (id && staticArticleIdSet.has(id)) {
+      return `/blog/article/${encodeURIComponent(id)}/`;
+    }
+    return rawUrl || (id ? legacyArticleHref(id) : "/bloglist");
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
@@ -97,3 +147,4 @@
     }
   });
 </script>
+<script type="application/json" id="static-article-ids" set:html={JSON.stringify(staticArticleIds)}></script>

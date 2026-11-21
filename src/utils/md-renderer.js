@@ -1,3 +1,16 @@
+function ensureStylesheet(href) {
+  if (typeof document === 'undefined') return;
+  const exists = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+    .some((link) => link.getAttribute('href') === href);
+  if (exists) return;
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  link.dataset.devinnestStylesheet = 'true';
+  document.head.appendChild(link);
+}
+
 export async function renderMarkdownToElement(text, el, options = {}) {
   const opts = {
     highlight: true,
@@ -7,7 +20,7 @@ export async function renderMarkdownToElement(text, el, options = {}) {
     ...options,
   };
 
-  if (!el) return;
+  if (!el) return false;
   const safeText = String(text ?? '');
 
   try {
@@ -127,7 +140,11 @@ export async function renderMarkdownToElement(text, el, options = {}) {
     // Syntax highlight
     if (opts.highlight) {
       try {
-        await import('highlight.js/styles/github-dark.min.css');
+        // Keep the optional theme on the same origin. Importing a package CSS
+        // file here makes Vite emit a runtime preload chunk whose hashed name
+        // can become stale after static post-processing. Loading the public
+        // vendor asset is asynchronous and never blocks article rendering.
+        ensureStylesheet('/libs/vendor/highlight.github-dark.min.css');
         const hljs = await import('highlight.js');
         el.querySelectorAll('pre code').forEach((block) => {
           try { hljs.default.highlightElement(block); } catch (_) {}
@@ -175,9 +192,12 @@ export async function renderMarkdownToElement(text, el, options = {}) {
       } catch (_) {/* ignore katex failure */}
     }
 
+    return true;
+
   } catch (err) {
     // Fallback to plain text on any failure
     el.textContent = safeText;
+    return false;
   }
 }
 

@@ -1,0 +1,128 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props as Props;
+---
+
+<div
+  id="article-load-state"
+  class:list={["article-load-state", className]}
+  data-article-load-state
+  aria-live="polite"
+>
+  <section data-article-load="loading" role="status" aria-live="polite" tabindex="-1">
+    <div class="article-load-skeleton" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="article-load-dots" aria-hidden="true">
+      <i></i><i></i><i></i>
+    </div>
+    <p data-article-load-copy="initial">正在翻开这篇文章…</p>
+    <p data-article-load-copy="slow" hidden>这篇文章还在路上，请稍等片刻</p>
+  </section>
+
+  <section data-article-load="error" role="alert" aria-live="assertive" tabindex="-1" hidden>
+    <p class="article-load-title">文章暂时没能打开</p>
+    <p class="article-load-description">可能是网络开了个小差。</p>
+    <div class="article-load-actions">
+      <button type="button" class="btn btn-primary rounded-xl" data-article-retry>重新加载</button>
+      <a href="/bloglist" class="btn btn-ghost rounded-xl">返回博客列表</a>
+    </div>
+  </section>
+
+  <section data-article-load="not-found" role="alert" aria-live="assertive" tabindex="-1" hidden>
+    <p class="article-load-title">文章不存在</p>
+    <p class="article-load-description">这篇文章可能已被移走，或者还没有发布。</p>
+    <div class="article-load-actions">
+      <a href="/bloglist" class="btn btn-primary rounded-xl">返回博客列表</a>
+    </div>
+  </section>
+</div>
+
+<style>
+  .article-load-state {
+    display: grid;
+    place-items: center;
+    min-height: 18rem;
+    padding: 2rem 1rem;
+    color: rgb(229 231 235);
+    text-align: center;
+  }
+
+  .article-load-state > [hidden] {
+    display: none;
+  }
+
+  .article-load-state section {
+    width: min(100%, 28rem);
+  }
+
+  .article-load-skeleton {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0 auto 1.5rem;
+    width: min(100%, 24rem);
+  }
+
+  .article-load-skeleton span {
+    display: block;
+    height: 0.8rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+    background-size: 200% 100%;
+    animation: article-load-shimmer 1.6s ease-in-out infinite;
+  }
+
+  .article-load-skeleton span:nth-child(2) { width: 86%; }
+  .article-load-skeleton span:nth-child(3) { width: 62%; }
+
+  .article-load-dots {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .article-load-dots i {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: rgb(16 185 129);
+    animation: article-load-breathe 1.2s ease-in-out infinite;
+  }
+
+  .article-load-dots i:nth-child(2) { animation-delay: 0.16s; }
+  .article-load-dots i:nth-child(3) { animation-delay: 0.32s; }
+
+  .article-load-state p { margin: 0; }
+  .article-load-title { font-size: 1.1rem; font-weight: 700; }
+  .article-load-description { margin-top: 0.5rem !important; color: rgb(156 163 175); }
+
+  .article-load-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  @keyframes article-load-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+  }
+
+  @keyframes article-load-breathe {
+    0%, 100% { opacity: 0.35; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-0.15rem); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .article-load-skeleton span,
+    .article-load-dots i {
+      animation: none;
+    }
+  }
+</style>

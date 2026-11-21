@@ -21,32 +21,32 @@ const { info } = Astro.props;
 <a href={info.url} target="_blank">
   <div
     class:list={[
-      "card max-lg:card-compact rounded-2xl shadow-xl w-full md:aspect-[1/1] lg:w-[12rem] lg:h-[12rem] mb-8",
+      "card max-lg:card-compact rounded-2xl shadow-xl w-full md:aspect-[1/1] lg:w-[12rem] lg:h-[12rem] mb-8 overflow-hidden",
       info.bgStyle,
     ]}
   >
-    <div class="card-body w-full h-full">
+    <div class="card-body w-full h-full justify-between gap-2 p-6">
       <h2
         class:list={[
           info.textStyle,
-          "card-title text-base sm:text-xl truncate",
+          "card-title text-base lg:text-lg leading-tight break-words",
         ]}
       >
         {info.title}
       </h2>
       <!-- 大屏幕使用简略信息 -->
-      <p class:list={["max-sm:hidden", info.textStyle]}>
+      <p class:list={["max-sm:hidden text-sm leading-snug break-words", info.textStyle]}>
         {info.desc}<br />{info.subdesc}
       </p>
       <!-- 小屏幕使用完整信息 -->
-      <p class:list={["sm:hidden", info.textStyle]}>
+      <p class:list={["sm:hidden text-sm leading-snug break-words", info.textStyle]}>
         {info.fulldesc}<br />{info.subdesc}
       </p>
       <div class="card-actions justify-end">
         <button
           class:list={[
             info.btnStyle,
-            "btn btn-sm rounded-xl capitalize border-0 max-w-full whitespace-nowrap",
+            "btn btn-xs sm:btn-sm rounded-xl capitalize border-0 max-w-full whitespace-nowrap",
           ]}
         >
           {info.btnText}

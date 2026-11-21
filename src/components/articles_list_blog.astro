@@ -1,21 +1,23 @@
 ---
-import { Image as AstroImage } from "astro:assets";
-import { blogApi } from "../api/blog";
 import type { BlogListItem } from "../api/blog";
+import { getBuildBlogSnapshot } from "../data/blog_build_snapshot";
 
 // 服务端获取数据
 let articles: BlogListItem[] = [];
 
 try {
-  const res = await blogApi.getBlogList({ pageSize: 1000 }); // 获取所有文章
-  articles = res.list;
+  const snapshot = await getBuildBlogSnapshot();
+  articles = snapshot.articles;
 } catch (error) {
   console.error("Failed to fetch blog list:", error);
 }
 
-const toDetailHref = (article: BlogListItem) => {
+const staticArticleIds = new Set(articles.map((article) => String(article.id)));
+
+const toLegacyDetailHref = (article: BlogListItem) => {
   const slug = article.slug || 'web-design-pattern';
   const params = new URLSearchParams({
+    id: article.id,
     slug,
     title: article.title,
     desc: article.desc || '',
@@ -24,7 +26,17 @@ const toDetailHref = (article: BlogListItem) => {
     cover: article.cover || ''
   });
   for (const t of (article.tags || [])) params.append('tag', t);
-  return `/blog/detail?${params.toString()}`;
+  params.delete('id');
+  const legacyBase = `/blog/detail?id=${encodeURIComponent(article.id)}`;
+  const query = params.toString();
+  return query ? `${legacyBase}&${query}` : legacyBase;
+};
+
+const toDetailHref = (article: BlogListItem) => {
+  if (staticArticleIds.has(String(article.id))) {
+    return `/blog/article/${encodeURIComponent(article.id)}/`;
+  }
+  return toLegacyDetailHref(article);
 };
 ---
 
@@ -48,6 +60,7 @@ const toDetailHref = (article: BlogListItem) => {
               <a
                 class="article-item group relative card rounded-2xl bg-neutral border border-white/10 hover:bg-base-300 overflow-hidden w-full"
                 href={toDetailHref(article)}
+                data-legacy-href={toLegacyDetailHref(article)}
                 style="display: none;" 
               >
                 <span class="pointer-events-none absolute left-3 top-3 bottom-3 w-[2px] bg-emerald-500/80 rounded-full" aria-hidden="true"></span>

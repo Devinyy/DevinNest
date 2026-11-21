@@ -1,20 +1,32 @@
 ---
 import StickyNav from "../../components/sticky_nav.astro";
 import CategoryIcon from "../../components/category_icon.astro";
+import ArticleLoadState from "../../components/article_load_state.astro";
+import { getBuildBlogSnapshot } from "../../data/blog_build_snapshot";
 
 // 支持通过查询参数渲染不同文章内容 
 const url = new URL(Astro.request.url);
 const qp = url.searchParams;
 const id = qp.get('id');
 
-let slug = qp.get('slug') || "未知";
-let articleTitle = qp.get('title') || "未知";
-let articleDesc = qp.get('desc') || "未知";
-let articleCategory = qp.get('category') || "未知";
-let articleDate = qp.get('date') || "未知时间";
-let articleTags = (qp.getAll('tag')?.length ? qp.getAll('tag') : (qp.get('tags')?.split(',').filter(Boolean) || ["未知"])) as string[];
-let articleCover = qp.get('cover') || "https://dummyimage.com/600x400/000/fff&text=%E6%9C%AA%E7%9F%A5";
+let slug = qp.get('slug') || "article";
+let articleTitle = qp.get('title') || "文章内容";
+let articleDesc = qp.get('desc') || "";
+let articleCategory = qp.get('category') || "";
+let articleDate = qp.get('date') || "";
+let articleTags = (qp.getAll('tag')?.length ? qp.getAll('tag') : (qp.get('tags')?.split(',').filter(Boolean) || [])) as string[];
+let articleCover = qp.get('cover') || "/icons/introduction.png";
 let markdownRaw: string = "";
+
+// Keep known built articles readable from local previews even when the
+// production API does not allow the preview origin through CORS. Unknown or
+// newly published IDs are intentionally left to the runtime API fallback.
+const buildSnapshot = await getBuildBlogSnapshot();
+const buildArticles = Object.fromEntries(
+  buildSnapshot.articles
+    .filter((article) => typeof article.content === "string" && article.content.trim())
+    .map((article) => [article.id, article]),
+);
 
 // 移除服务端 API 调用，改为客户端获取
 // if (id) { ... } 逻辑已移除
@@ -31,9 +43,6 @@ if (!id && !markdownRaw) {
   }
 }
 
-if (!markdownRaw) {
-  markdownRaw = `# 内容未找到\n\n未找到 slug 为 \`${slug}\` 的文章。`;
-}
 ---
 
 <!doctype html>
@@ -54,7 +63,7 @@ if (!markdownRaw) {
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="/favicons/apple-touch-icon.png"
+      href="/favicons/apple-touch-icon-180x180.png"
     />
     <link
       rel="icon"
@@ -177,6 +186,14 @@ if (!markdownRaw) {
         border: 1px solid rgba(255,255,255,0.08);
         box-shadow: 0 8px 24px rgba(0,0,0,0.15);
       }
+      .article-layout { align-items: start; }
+      @media (min-width: 1024px) {
+        .article-layout.article-layout-error { align-items: stretch; }
+        .article-layout.article-layout-error .article-toc-card {
+          align-self: stretch;
+          min-height: 100%;
+        }
+      }
     </style>
   </head>
   <body class="bg-base-100">
@@ -194,7 +211,7 @@ if (!markdownRaw) {
               <p id="article-desc" class="text-gray-400 mb-3">{articleDesc}</p>
               <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
                 <span id="article-date" class="text-gray-400">{articleDate}</span>
-                <span id="article-category" class="px-2 py-1 rounded-lg bg-base-300 text-gray-200 flex items-center gap-1">
+                <span id="article-category" class:list={["px-2 py-1 rounded-lg bg-base-300 text-gray-200 flex items-center gap-1", !articleCategory && "hidden"]}>
                   <CategoryIcon name="palette" class="w-4 h-4" />
                   <span id="article-category-text">{articleCategory}</span>
                 </span>
@@ -204,8 +221,6 @@ if (!markdownRaw) {
                   ))}
                 </span>
                 <div class="ml-auto flex items-center gap-2">
-                  <button id="btn-like" class="btn btn-sm rounded-xl btn-outline" aria-label="喜欢文章" title="喜欢">喜欢</button>
-                  <button id="btn-bookmark" class="btn btn-sm rounded-xl btn-outline" aria-label="收藏文章" title="收藏">收藏</button>
                   <button id="btn-share" class="btn btn-sm rounded-xl" aria-label="分享文章" title="分享">分享</button>
                 </div>
               </div>
@@ -214,34 +229,17 @@ if (!markdownRaw) {
         </div>
       </section>
 
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 mt-6">
+      <div class="article-layout grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 mt-6">
         <!-- 正文 -->
         <article id="article" class="article card glass-card">
           <div class="card-body prose prose-invert max-w-none">
-            <div id="md-content"></div>
-
-            <h2>表单与交互</h2>
-            <p>示例表单体现输入、校验与状态反馈：</p>
-            <form id="commentForm" class="space-y-2">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input id="nickname" type="text" placeholder="昵称" class="input input-bordered rounded-xl" />
-                <input id="email" type="email" placeholder="邮箱（可选）" class="input input-bordered rounded-xl" />
-              </div>
-              <textarea id="content" class="textarea textarea-bordered rounded-xl" rows="4" placeholder="写点什么吧…"></textarea>
-              <div class="flex items-center justify-between">
-                <label class="label cursor-pointer">
-                  <span class="label-text text-gray-300 mr-2">匿名</span>
-                  <input id="isAnon" type="checkbox" class="toggle toggle-sm" />
-                </label>
-                <button type="submit" class="btn rounded-xl">提交评论</button>
-              </div>
-            </form>
-            <div id="commentList" class="mt-4 space-y-3"></div>
+            <ArticleLoadState />
+            <div id="md-content" tabindex="-1" hidden aria-busy="true"></div>
           </div>
         </article>
 
         <!-- 目录（右侧，桌面端吸顶：滚动时固定在导航栏下方，超长则内部滚动） -->
-        <aside class="lg:col-span-1 card glass-card lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
+        <aside class="article-toc-card lg:col-span-1 card glass-card lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
           <div class="card-body">
             <h3 class="text-lg md:text-xl font-bold mb-2">目录</h3>
             <nav id="toc" class="toc text-sm space-y-2"></nav>
@@ -260,12 +258,15 @@ if (!markdownRaw) {
       </section>
     </main>
 
-    <script define:vars={{ id, slug, articleDesc, articleMarkdown: markdownRaw }}>
-      window.blogParams = { id, slug, articleDesc, articleMarkdown };
+    <script define:vars={{ id, slug, articleDesc, articleMarkdown: markdownRaw, buildArticles }}>
+      window.blogParams = { id, slug, articleDesc, articleMarkdown, buildArticles };
     </script>
 
     <script>
       import { blogApi } from "../../api/blog";
+      import type { BlogDetail } from "../../api/blog";
+      import { createArticleLoadController, isArticleNotFoundError } from "../../utils/article-load-state.js";
+      import { renderMarkdownToElement } from "../../utils/md-renderer.js";
       import { secureUrl } from "../../utils/secure-url";
 
       // 定义 window 上的自定义属性类型
@@ -276,12 +277,13 @@ if (!markdownRaw) {
             slug?: string;
             articleDesc?: string;
             articleMarkdown?: string;
+            buildArticles?: Record<string, BlogDetail>;
           };
         }
       }
 
       document.addEventListener('DOMContentLoaded', async () => {
-        let { id, slug, articleDesc, articleMarkdown } = window.blogParams || {};
+        let { id, articleDesc, articleMarkdown, buildArticles } = window.blogParams || {};
 
         // 如果 blogParams 中没有 id，尝试从 URL 参数获取
         if (!id) {
@@ -289,63 +291,112 @@ if (!markdownRaw) {
           id = urlParams.get('id');
         }
 
-        let markdownContent = articleMarkdown;
-
         const progress = document.getElementById('readingProgress');
         const article = document.getElementById('article');
         const toc = document.getElementById('toc');
-        const btnLike = document.getElementById('btn-like');
-        const btnBookmark = document.getElementById('btn-bookmark');
         const btnShare = document.getElementById('btn-share');
         const mdEl = document.getElementById('md-content');
-        console.log('Fetching blog detail for id:', id);
-        // 如果有 ID，尝试从客户端 API 获取最新内容
-        if (id) {
-           try {
-             // 简单的加载状态
-             if (mdEl) {
-               mdEl.innerHTML = '<div class="flex justify-center py-20"><span class="loading loading-dots loading-lg"></span></div>';
-             }
-             
-             const blog = await blogApi.getBlogDetail(id).send();
-             if (blog) {
-                markdownContent = blog.content;
-                
-                // 更新页面元数据与内容
-                document.title = `${blog.title} · Devin's Nest`;
-                const metaDesc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-                if (metaDesc) metaDesc.content = blog.desc || '';
-                
-                const titleEl = document.getElementById('article-title');
-                if (titleEl) titleEl.textContent = blog.title;
-                
-                const descEl = document.getElementById('article-desc');
-                if (descEl) descEl.textContent = blog.desc || '';
+        const stateRoot = document.querySelector('[data-article-load-state]');
+        if (!mdEl || !stateRoot) return;
+        const controller = createArticleLoadController(stateRoot, mdEl);
+        let currentDescription = typeof articleDesc === 'string' ? articleDesc : '';
+        let tocObserver: IntersectionObserver | undefined;
 
-                const dateEl = document.getElementById('article-date');
-                if (dateEl) dateEl.textContent = blog.date;
+        const applyBlogMetadata = (blog: BlogDetail) => {
+          const nextDescription = blog.desc || '';
+          articleDesc = nextDescription;
+          currentDescription = nextDescription;
+          const initialTitle = document.getElementById('article-title')?.textContent || '文章内容';
+          document.title = `${blog.title || initialTitle} · Devin's Nest`;
+          const metaDesc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+          if (metaDesc) metaDesc.content = nextDescription;
 
-                const catEl = document.getElementById('article-category-text');
-                if (catEl) catEl.textContent = blog.category?.name || '默认';
+          const titleEl = document.getElementById('article-title');
+          if (titleEl && blog.title) titleEl.textContent = blog.title;
+          const descEl = document.getElementById('article-desc');
+          if (descEl) descEl.textContent = nextDescription;
+          const dateEl = document.getElementById('article-date');
+          if (dateEl && blog.date) dateEl.textContent = blog.date;
 
-                const coverEl = document.getElementById('article-cover') as HTMLImageElement | null;
-                if (coverEl && blog.cover) coverEl.src = secureUrl(blog.cover);
+          const catEl = document.getElementById('article-category-text');
+          const categoryEl = document.getElementById('article-category');
+          if (catEl) catEl.textContent = blog.category?.name || '';
+          if (categoryEl) categoryEl.classList.toggle('hidden', !blog.category?.name);
 
-                const tagsContainer = document.getElementById('article-tags-container');
-                if (tagsContainer && blog.tags) {
-                   tagsContainer.innerHTML = blog.tags.map(t => 
-                     `<span class="px-2 py-1 rounded-full bg-base-300 text-gray-200">${t}</span>`
-                   ).join('');
+          const coverEl = document.getElementById('article-cover') as HTMLImageElement | null;
+          if (coverEl && blog.cover) coverEl.src = secureUrl(blog.cover);
+
+          const tagsContainer = document.getElementById('article-tags-container');
+          if (tagsContainer && Array.isArray(blog.tags)) {
+            tagsContainer.replaceChildren(...blog.tags.map((tag: string) => {
+              const tagEl = document.createElement('span');
+              tagEl.className = 'px-2 py-1 rounded-full bg-base-300 text-gray-200';
+              tagEl.textContent = tag;
+              return tagEl;
+            }));
+          }
+        };
+
+        const loadArticle = async () => {
+          const token = controller.begin();
+          try {
+            let markdownContent = articleMarkdown;
+            if (id) {
+              const embeddedArticle = buildArticles?.[id];
+              if (embeddedArticle?.content && embeddedArticle.content.trim()) {
+                markdownContent = embeddedArticle.content;
+                applyBlogMetadata(embeddedArticle);
+              } else {
+                const blog = await blogApi.getBlogDetail(id).send();
+                if (!controller.isCurrent(token)) return false;
+                if (!blog) {
+                  controller.notFound(token);
+                  return false;
                 }
-             }
-           } catch (e: any) {
-             console.error("Client-side fetch failed", e);
-             if (mdEl) {
-               mdEl.innerHTML = `<div class="alert alert-error">加载失败: ${e.message || '未知错误'}</div>`;
-             }
-             markdownContent = ''; 
-           }
-        }
+                if (typeof blog.content !== 'string' || !blog.content.trim()) {
+                  throw new Error('Article content is empty or invalid');
+                }
+                markdownContent = blog.content;
+                applyBlogMetadata(blog);
+              }
+            } else if (typeof markdownContent !== 'string' || !markdownContent.trim()) {
+              controller.notFound(token);
+              return false;
+            }
+
+            const nextContent = document.createElement('div');
+            nextContent.className = 'article-content';
+            const rendered = await renderMarkdownToElement(markdownContent, nextContent, {
+              mermaid: true,
+              math: true,
+              sanitize: true,
+            });
+            if (!controller.isCurrent(token)) return false;
+            if (rendered === false) throw new Error('Markdown rendering failed');
+
+            nextContent.querySelectorAll('img').forEach((image) => {
+              const src = image.getAttribute('src');
+              if (src) image.setAttribute('src', secureUrl(src));
+            });
+            if (!controller.isCurrent(token)) return false;
+            mdEl.replaceChildren(...Array.from(nextContent.childNodes));
+            document.querySelectorAll('img').forEach((image) => {
+              const src = image.getAttribute('src');
+              if (src) {
+                const secured = secureUrl(src);
+                if (secured !== src) image.setAttribute('src', secured);
+              }
+            });
+            return controller.complete(token);
+          } catch (error) {
+            if (controller.isCurrent(token)) {
+              console.warn('Client-side article load failed:', error);
+              if (isArticleNotFoundError(error)) controller.notFound(token);
+              else controller.fail(token);
+            }
+            return false;
+          }
+        };
 
         // 统一的轻提示（Toast），用于复制/分享等非阻塞反馈
         function showToast(message: string, type: string = 'success') {
@@ -365,32 +416,6 @@ if (!markdownRaw) {
           setTimeout(() => alert.remove(), 2000);
         }
 
-        // 渲染 Markdown 到正文容器（使用自定义渲染库）
-        try {
-          // @ts-ignore
-          const { renderMarkdownToElement } = await import('../../utils/md-renderer.js');
-          if (mdEl) {
-            await renderMarkdownToElement(markdownContent, mdEl, {
-              // 先禁用库内高亮，改为在行号美化后自定义高亮
-              // highlight: false,
-              mermaid: true,
-              math: true,
-              sanitize: true,
-            });
-          }
-        } catch (e) {
-          // 解析库加载失败则以纯文本回退，避免页面空白
-          if (mdEl) {
-            mdEl.textContent = markdownContent || '';
-          }
-        }
-
-        // 把所有 http://devinnest-api.top 图片(封面+正文)升级为 https，消除混合内容("不安全")
-        document.querySelectorAll('img').forEach((im) => {
-          const s = im.getAttribute('src');
-          if (s) { const u = secureUrl(s); if (u !== s) im.setAttribute('src', u); }
-        });
-
         // 阅读进度
         function updateProgress(){
           const docH = document.documentElement.scrollHeight - window.innerHeight;
@@ -402,56 +427,46 @@ if (!markdownRaw) {
             progress.setAttribute('aria-valuenow', String(pct));
           }
         }
-        updateProgress();
-        let ticking = false;
-        function onScroll(){
-          if (!ticking) {
-            requestAnimationFrame(() => { updateProgress(); ticking = false; });
-            ticking = true;
-          }
-        }
-        window.addEventListener('scroll', onScroll, { passive: true });
-
-        // 生成目录并高亮当前章节
-        if (article) {
-          const headings = Array.from(article.querySelectorAll('h2, h3'));
+        // 生成目录并高亮当前章节。重试成功后也会重新生成，避免旧目录残留。
+        function rebuildToc() {
+          if (!toc || !mdEl) return;
+          toc.replaceChildren();
+          tocObserver?.disconnect();
+          const headings = Array.from(mdEl.querySelectorAll('h2, h3'));
+          const usedIds = new Set<string>();
           headings.forEach((h) => {
-            const baseId = (h.textContent || '').trim().replace(/\s+/g,'-').toLowerCase();
-            let id = baseId || 'section';
-            if (!h.id) {
-              let n = 2;
-              while (document.getElementById(id)) { id = baseId + '-' + (n++); }
-              h.id = id;
-            } else {
-              id = h.id;
-            }
-            const a = document.createElement('a');
-            a.href = '#' + id;
-            a.textContent = h.textContent;
-            const depth = h.tagName.toLowerCase();
-            const indentClass = depth === 'h3' ? 'pl-3' : '';
-            a.className = 'block px-2 py-1 rounded-lg hover:bg-base-300 ' + indentClass;
-            a.addEventListener('click', (e) => {
-              e.preventDefault();
-              const target = document.getElementById(id);
+            const baseId = (h.textContent || '').trim().replace(/\s+/g, '-').toLowerCase() || 'section';
+            let headingId = h.id || baseId;
+            let suffix = 2;
+            while (usedIds.has(headingId)) headingId = `${baseId}-${suffix++}`;
+            usedIds.add(headingId);
+            h.id = headingId;
+
+            const link = document.createElement('a');
+            link.href = '#' + headingId;
+            link.textContent = h.textContent;
+            link.className = 'block px-2 py-1 rounded-lg hover:bg-base-300 ' + (h.tagName.toLowerCase() === 'h3' ? 'pl-3' : '');
+            link.addEventListener('click', (event) => {
+              event.preventDefault();
+              const target = document.getElementById(headingId);
               const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-              if (target) { target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }
+              if (target) target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
             });
-            if (toc) { toc.appendChild(a); }
+            toc.appendChild(link);
           });
-        }
-        
-        const tocLinks = Array.from(toc ? toc.querySelectorAll('a') : []);
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const id = entry.target.id;
-              tocLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
-            }
-          })
-        }, { rootMargin: '0px 0px -70% 0px', threshold: 0.01 });
-        if (article) {
-          article.querySelectorAll('h2, h3').forEach(h => observer.observe(h));
+
+          if ('IntersectionObserver' in window) {
+            const tocLinks = Array.from(toc.querySelectorAll('a'));
+            tocObserver = new IntersectionObserver((entries) => {
+              entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                tocLinks.forEach((link) => {
+                  link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+                });
+              });
+            }, { rootMargin: '0px 0px -70% 0px', threshold: 0.01 });
+            headings.forEach((heading) => tocObserver?.observe(heading));
+          }
         }
 
         // CSDN风格：语言标签、头部与行号
@@ -476,9 +491,8 @@ if (!markdownRaw) {
         }
 
         async function prettifyCodeBlocks() {
-          // 动态加载高亮库与样式
-          // 使用深灰色主题：改用 highlight.js 的 github-dark，并覆盖背景为深灰
-          await import('highlight.js/styles/github-dark.min.css');
+          // 使用同源的本地主题资源；附加高亮失败不能阻塞文章和重试流程。
+          ensureCss('hljs-dark-theme', '/libs/vendor/highlight.github-dark.min.css');
           // 如果之前注入了浅色覆盖样式，移除它
           const prevLight = document.getElementById('hljs-light-override');
           if (prevLight) prevLight.remove();
@@ -634,107 +648,63 @@ if (!markdownRaw) {
             pre.appendChild(newCode);
           });
         }
-        await prettifyCodeBlocks();
 
-        // 匿名开关：开启时展示主题绿色
-        const anonInput = document.getElementById('isAnon') as HTMLInputElement | null;
-        const refreshAnonToggle = () => {
-          const on = !!(anonInput && anonInput.checked);
-          if (anonInput) { anonInput.classList.toggle('toggle-success', on); }
-        };
-        refreshAnonToggle();
-        if (anonInput) { anonInput.addEventListener('change', refreshAnonToggle); }
-
-        // 喜欢/收藏（本地存储）
-        const likeKey = 'like:' + slug;
-        const bookmarkKey = 'bookmark:' + slug;
-        function refreshLike(){
-          const liked = localStorage.getItem(likeKey) === '1';
-          if (btnLike) {
-            btnLike.classList.toggle('bg-emerald-500', liked);
-            btnLike.classList.toggle('text-black', liked);
+        async function prettifyCodeBlocksSafely() {
+          try {
+            await prettifyCodeBlocks();
+          } catch (error) {
+            console.warn('Optional code highlighting was skipped:', error);
           }
         }
-        function refreshBookmark(){
-          const saved = localStorage.getItem(bookmarkKey) === '1';
-          if (btnBookmark) {
-            btnBookmark.classList.toggle('bg-emerald-500', saved);
-            btnBookmark.classList.toggle('text-black', saved);
+
+        // 基础交互必须在首次网络/渲染 await 之前注册。否则任一可选资源失败，
+        // 用户会看见错误态，却没有可用的重试或页面清理监听器。
+        let ticking = false;
+        function onScroll(){
+          if (!ticking) {
+            requestAnimationFrame(() => { updateProgress(); ticking = false; });
+            ticking = true;
           }
         }
-        refreshLike(); refreshBookmark();
-        if (btnLike) {
-          btnLike.addEventListener('click', () => {
-            const liked = localStorage.getItem(likeKey) === '1';
-            localStorage.setItem(likeKey, liked ? '0' : '1');
-            refreshLike();
-          });
-        }
-        if (btnBookmark) {
-          btnBookmark.addEventListener('click', () => {
-            const saved = localStorage.getItem(bookmarkKey) === '1';
-            localStorage.setItem(bookmarkKey, saved ? '0' : '1');
-            refreshBookmark();
-          });
-        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        stateRoot.querySelector('[data-article-retry]')?.addEventListener('click', async () => {
+          const loaded = await loadArticle();
+          if (!loaded) return;
+          rebuildToc();
+          await prettifyCodeBlocksSafely();
+          updateProgress();
+        });
+        window.addEventListener('pagehide', () => {
+          controller.dispose();
+          tocObserver?.disconnect();
+          window.removeEventListener('scroll', onScroll);
+        }, { once: true });
+
         if (btnShare) {
           btnShare.addEventListener('click', async () => {
-            const shareData = { title: document.title, text: articleDesc || '', url: location.href };
+            const shareData = { title: document.title, text: currentDescription, url: location.href };
             try {
               if (navigator.share) { await navigator.share(shareData); showToast('已分享'); }
               else if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(location.href);
                 showToast('链接已复制');
+              } else {
+                showToast('当前浏览器不支持分享', 'warning');
               }
-            } catch(_) { }
+            } catch(_) { showToast('分享未完成', 'warning'); }
           });
         }
 
-        // 评论（本地存储演示）
-        const form = document.getElementById('commentForm');
-        const list = document.getElementById('commentList');
-        const storeKey = 'comments:' + slug;
-        function renderComments(){
-          const raw = localStorage.getItem(storeKey);
-          const items: any[] = raw ? JSON.parse(raw) : [];
-          if (list) { list.innerHTML = ''; }
-          items.forEach((c: any) => {
-            const wrap = document.createElement('div');
-            wrap.className = 'p-3 rounded-xl bg-base-300';
-            const meta = document.createElement('div');
-            meta.className = 'text-sm text-gray-400';
-            meta.textContent = (c && c.nickname ? c.nickname : '匿名');
-            const content = document.createElement('div');
-            content.className = 'text-gray-200 mt-1';
-            content.textContent = (c && c.content ? c.content : '');
-            wrap.appendChild(meta);
-            wrap.appendChild(content);
-            if (list) { list.appendChild(wrap); }
-          });
-        }
-        renderComments();
-        if (form) {
-          form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const nicknameEl = document.getElementById('nickname') as HTMLInputElement | null;
-            const emailEl = document.getElementById('email') as HTMLInputElement | null;
-            const contentEl = document.getElementById('content') as HTMLTextAreaElement | null;
-            const isAnonEl = document.getElementById('isAnon') as HTMLInputElement | null;
-            
-            const nickname = (nicknameEl && nicknameEl.value) || '';
-            const email = (emailEl && emailEl.value) || '';
-            const content = (contentEl && contentEl.value) || '';
-            const isAnon = !!(isAnonEl && isAnonEl.checked);
-            
-            if (!String(content).trim()) return;
-            const raw = localStorage.getItem(storeKey);
-            const items = raw ? JSON.parse(raw) : [];
-            items.push({ nickname: isAnon ? '' : nickname, email, content, ts: Date.now() });
-            localStorage.setItem(storeKey, JSON.stringify(items));
-            if (contentEl) { contentEl.value = ''; }
-            renderComments();
-          });
-        }
+        await loadArticle();
+        // 把所有 http://devinnest-api.top 图片(封面+正文)升级为 https，消除混合内容("不安全")
+        document.querySelectorAll('img').forEach((im) => {
+          const s = im.getAttribute('src');
+          if (s) { const u = secureUrl(s); if (u !== s) im.setAttribute('src', u); }
+        });
+        updateProgress();
+        rebuildToc();
+        await prettifyCodeBlocksSafely();
       });
     </script>
     <script defer src="/libs/mouse-click.js"></script>

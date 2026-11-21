@@ -1,16 +1,26 @@
 ---
 import StickyNav from "../components/sticky_nav.astro";
 import { snippetApi, type TimelineGroup } from "../api/snippet";
+import localFragmentTimeline from "../data/fragment_timeline";
 
-let fragmentTimeline: TimelineGroup[] = [];
+let fragmentTimeline: TimelineGroup[] = localFragmentTimeline;
+let fragmentDataError = false;
 
 try {
-  const res = await snippetApi.getSnippetTimeline();
-  fragmentTimeline = Array.isArray(res) ? res : [];
+  const res = await snippetApi.getSnippetTimeline().send();
+  if (Array.isArray(res)) {
+    fragmentTimeline = res;
+  } else {
+    fragmentDataError = true;
+  }
 } catch (error) {
   console.error("Failed to fetch snippet timeline:", error);
-  // 这里可以添加 fallback 数据或错误处理逻辑
+  fragmentDataError = true;
 }
+
+const hasFragmentContent = fragmentTimeline.some(
+  (group) => Array.isArray(group.items) && group.items.length > 0,
+);
 
 // 简单的辅助函数，用于增强展示效果
 function getTimelineDotColor(index: number) {
@@ -43,7 +53,7 @@ function getTimelineDotColor(index: number) {
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="/favicons/apple-touch-icon.png"
+      href="/favicons/apple-touch-icon-180x180.png"
     />
     <link
       rel="icon"
@@ -102,6 +112,14 @@ function getTimelineDotColor(index: number) {
             <p class="text-gray-400 text-lg max-w-lg mx-auto leading-relaxed">
                 收集散落在时间缝隙里的微光，记录那些稍纵即逝的瞬间与思考。
             </p>
+            <p
+                id="fragment-data-status"
+                role="status"
+                aria-live="polite"
+                class:list={["text-sm text-amber-300 mt-4", !fragmentDataError && "hidden"]}
+            >
+                最新内容同步失败，当前展示本地快照。
+            </p>
         </header>
 
         <!-- 入口卡片 -->
@@ -126,7 +144,7 @@ function getTimelineDotColor(index: number) {
             </a>
         </div>
 
-        <div class="relative space-y-16">
+        <div id="fragment-timeline" class="relative space-y-16">
             {fragmentTimeline.map((group) => (
                 <div class="relative group-year">
                     <!-- 年份标记 -->
@@ -175,6 +193,12 @@ function getTimelineDotColor(index: number) {
                 </div>
             ))}
         </div>
+        <p
+            id="fragment-empty"
+            class:list={["text-center text-gray-400 py-8", hasFragmentContent && "hidden"]}
+        >
+            暂无碎片内容
+        </p>
         
         <!-- 底部装饰 -->
         <div class="mt-20 text-center">
@@ -186,5 +210,115 @@ function getTimelineDotColor(index: number) {
              <p class="mt-4 text-xs text-gray-600">未完待续...</p>
         </div>
     </main>
+    <script>
+      import { snippetApi } from "../api/snippet";
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const timelineEl = document.getElementById("fragment-timeline");
+        const emptyEl = document.getElementById("fragment-empty");
+        const statusEl = document.getElementById("fragment-data-status");
+        if (!(timelineEl instanceof HTMLElement) || !(emptyEl instanceof HTMLElement) || !(statusEl instanceof HTMLElement)) return;
+
+        type FragmentItem = {
+          id?: string;
+          blogId?: string;
+          url?: string;
+          title?: string;
+          time?: string;
+          content?: string;
+        };
+        type FragmentGroup = { year: unknown; items: FragmentItem[] };
+
+        const escapeHtml = (value: unknown): string => String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+
+        const safeHref = (item: { id?: string; blogId?: string; url?: string }): string => {
+          const itemId = item.id || item.blogId;
+          const candidate = item.url || (itemId ? `/blog/daily?id=${encodeURIComponent(itemId)}` : "");
+          if (!candidate) return "";
+          try {
+            const url = new URL(candidate, window.location.origin);
+            if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+            return url.href;
+          } catch {
+            return "";
+          }
+        };
+
+        const setSyncStatus = (message: string): void => {
+          statusEl.textContent = message;
+          statusEl.classList.toggle("hidden", !message);
+        };
+
+        function renderFragmentTimeline(
+          groups: unknown,
+          timelineElement: HTMLElement,
+          emptyElement: HTMLElement,
+        ): void {
+          const candidateGroups = (Array.isArray(groups) ? groups : []) as FragmentGroup[];
+          const normalizedGroups = candidateGroups.filter(
+            (group) => group && Array.isArray(group.items) && group.items.length > 0,
+          );
+
+          const dotColors = [
+            "bg-emerald-500",
+            "bg-blue-500",
+            "bg-purple-500",
+            "bg-rose-500",
+            "bg-amber-500",
+          ];
+
+          timelineElement.innerHTML = normalizedGroups.map((group) => `
+            <div class="relative group-year">
+              <div class="flex items-center gap-4 mb-8">
+                <div class="text-5xl font-bold text-white/5 select-none absolute -left-4 -top-6 pointer-events-none z-0 scale-150 origin-bottom-left transition-colors duration-500 group-year-hover:text-white/10">
+                  ${escapeHtml(group.year)}
+                </div>
+                <h2 class="text-2xl font-bold text-emerald-400 relative z-10 pl-2 border-l-4 border-emerald-500/50">
+                  ${escapeHtml(group.year)}
+                </h2>
+              </div>
+              <div class="relative pl-4 md:pl-8 space-y-8">
+                <div class="timeline-connector"></div>
+                ${group.items.map((item, index) => {
+                  const href = safeHref(item);
+                  const cardClasses = "flex-1 fragment-card bg-white/5 backdrop-blur-md border border-white/5 rounded-2xl p-5 md:p-6 ml-6 w-full hover:border-emerald-500/20 hover:bg-white/10";
+                  const cardContent = `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <h3 class="text-xl font-semibold text-gray-100 group-hover:text-emerald-300 transition-colors">${escapeHtml(item.title)}</h3>
+                      <time class="text-sm font-mono text-gray-500 shrink-0 bg-black/20 px-2 py-1 rounded">${escapeHtml(item.time)}</time>
+                    </div>
+                    ${item.content ? `<p class="text-gray-400 leading-relaxed text-sm md:text-base border-t border-white/5 pt-3 mt-1">${escapeHtml(item.content)}</p>` : ""}`;
+                  const card = href
+                    ? `<a href="${escapeHtml(href)}" class="${cardClasses} cursor-pointer">${cardContent}</a>`
+                    : `<div class="${cardClasses} cursor-default pointer-events-none">${cardContent}</div>`;
+                  return `
+                    <div class="relative flex gap-6 items-start group">
+                      <div class="absolute left-[11px] top-2 w-2 h-2 rounded-full ${dotColors[index % dotColors.length]} ring-4 ring-base-100 z-10 group-hover:scale-125 transition-transform duration-300"></div>
+                      ${card}
+                    </div>`;
+                }).join("")}
+              </div>
+            </div>`).join("");
+
+          emptyElement.classList.toggle("hidden", normalizedGroups.length > 0);
+        }
+
+        try {
+          const response = await snippetApi.getSnippetTimeline().send();
+          if (!Array.isArray(response)) throw new Error("Invalid snippet timeline response");
+          renderFragmentTimeline(response, timelineEl, emptyEl);
+          setSyncStatus("");
+        } catch (error) {
+          // 运行时请求失败时保留服务端渲染的快照。
+          console.warn("Failed to refresh snippet timeline:", error);
+          setSyncStatus("最新内容同步失败，当前展示页面快照。");
+        }
+      });
+    </script>
   </body>
 </html>

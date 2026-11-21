@@ -1,0 +1,397 @@
+---
+import StickyNav from "../../../components/sticky_nav.astro";
+import CategoryIcon from "../../../components/category_icon.astro";
+import ArticleLoadState from "../../../components/article_load_state.astro";
+import type { BlogListItem } from "../../../api/blog";
+import { getBuildBlogSnapshot } from "../../../data/blog_build_snapshot";
+import { secureUrl } from "../../../utils/secure-url";
+
+/**
+ * The article route and every build-time link consume the same cached snapshot.
+ * A newly published article that has not been rebuilt keeps using the legacy
+ * query-string route, so the archive never points at a page that does not exist.
+ */
+export async function getStaticPaths() {
+  const snapshot = await getBuildBlogSnapshot();
+
+  return snapshot.articles.map((article) => ({
+    params: { id: article.id },
+    props: { article },
+  }));
+}
+
+interface Props {
+  article: BlogListItem;
+}
+
+const { article } = Astro.props as Props;
+const articleContent = typeof (article as BlogListItem & { content?: unknown }).content === "string"
+  ? (article as BlogListItem & { content: string }).content
+  : "";
+const siteUrl = new URL(Astro.site?.toString() || "https://devinnest.top/");
+const articleId = String(article.id);
+const canonicalUrl = new URL(
+  `/blog/article/${encodeURIComponent(articleId)}/`,
+  siteUrl,
+).toString();
+const title = article.title?.trim() || "文章内容";
+const description = article.desc?.trim() || title;
+const absoluteUrl = (value: string) => {
+  const secured = secureUrl(value);
+  return new URL(secured || "/icons/introduction.png", siteUrl).toString();
+};
+const coverUrl = absoluteUrl(article.cover || "/icons/introduction.png");
+const tags = Array.isArray(article.tags) ? article.tags : [];
+const category = article.category?.name || "";
+
+declare global {
+  interface Window {
+    staticArticle?: {
+      articleId: string;
+      title: string;
+      description: string;
+      coverUrl: string;
+        content?: string;
+    };
+  }
+}
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="black">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} · Devin's Nest</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={coverUrl} />
+    <meta property="og:image:secure_url" content={coverUrl} />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:site_name" content="Devin's Nest" />
+    <meta property="og:locale" content="zh_CN" />
+    {article.date && <meta property="article:published_time" content={article.date} />}
+    {category && <meta property="article:section" content={category} />}
+    {tags.map((tag) => <meta property="article:tag" content={tag} />)}
+    <link rel="preload" href="/fonts/MaoKenZhuYuanTi.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="shortcut icon" href="/favicons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon-180x180.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+    <link rel="manifest" href="/favicons/site.webmanifest" />
+    <style>
+      @font-face {
+        font-family: "MaokenZhuyuanTi";
+        src: url(/fonts/MaoKenZhuYuanTi.ttf);
+        font-display: swap;
+      }
+      body {
+        cursor: url(/icons/cursor.ico), auto;
+        font-family: "MaokenZhuyuanTi";
+      }
+      .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0;
+        background: rgb(16 185 129);
+        z-index: 9999;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+      }
+      .toc a.active { color: rgb(16 185 129); }
+      .article-content img {
+        border-radius: 0.75rem;
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 1.5rem auto;
+      }
+      .article-content pre {
+        position: relative;
+        overflow-x: auto;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .article-content table th[align="left"],
+      .article-content table td[align="left"] { text-align: left; }
+      .article-content table th[align="center"],
+      .article-content table td[align="center"] { text-align: center; }
+      .article-content table th[align="right"],
+      .article-content table td[align="right"] { text-align: right; }
+      .glass-card {
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+      .article-layout { align-items: start; }
+      @media (min-width: 1024px) {
+        .article-layout.article-layout-error { align-items: stretch; }
+        .article-layout.article-layout-error .article-toc-card {
+          align-self: stretch;
+          min-height: 100%;
+        }
+      }
+      @media (max-width: 640px) {
+        .article-content pre { max-height: 50vh; }
+        #toc { max-height: 50vh; overflow: auto; }
+      }
+    </style>
+  </head>
+  <body class="bg-base-100">
+    <div class="reading-progress" id="readingProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="阅读进度"></div>
+    <StickyNav showImmediately={true} />
+
+    <main class="max-w-screen-2xl mx-auto px-3 xs:px-5 lg:px-10 pt-20 pb-12">
+      <article class="max-w-4xl mx-auto">
+        <header class="card rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl">
+          <div class="card-body">
+            <div class="flex items-start gap-4">
+              <img src={coverUrl} width="72" height="72" alt={title} class="w-16 h-16 md:w-18 md:h-18 rounded-xl object-cover shrink-0" />
+              <div class="min-w-0">
+                <p class="text-sm text-emerald-400 mb-2">Devin's Nest · 文章</p>
+                <h1 class="text-2xl md:text-4xl font-bold leading-tight">{title}</h1>
+                <p class="text-gray-400 mt-3">{description}</p>
+                <div class="mt-4 flex flex-wrap items-center gap-2 text-sm text-gray-400">
+                  {article.date && <span>{article.date}</span>}
+                  {category && (
+                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-base-300 text-gray-200">
+                      <CategoryIcon name="palette" class="w-4 h-4" />
+                      {category}
+                    </span>
+                  )}
+                  {tags.map((tag) => <span class="px-2 py-1 rounded-full bg-base-300 text-gray-200">{tag}</span>)}
+                  <button id="btn-share" class="btn btn-sm rounded-xl ml-auto" type="button" aria-label="分享文章" title="分享">分享</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="article-layout grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 mt-6">
+          <article id="article" class="card glass-card">
+            <ArticleLoadState />
+            <div id="article-content" tabindex="-1" class="card-body prose prose-invert max-w-none article-content" hidden aria-busy="true">
+              <p class="text-gray-400">{description}</p>
+            </div>
+          </article>
+          <aside class="article-toc-card lg:col-span-1 card glass-card lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
+            <div class="card-body">
+              <h2 class="text-lg md:text-xl font-bold mb-2">目录</h2>
+              <nav id="toc" class="toc text-sm space-y-2" aria-label="文章目录"></nav>
+            </div>
+          </aside>
+        </div>
+
+        <section class="mt-8 card glass-card">
+          <div class="card-body">
+            <h2 class="text-xl font-bold">相关文章</h2>
+            <p class="text-sm text-gray-400 mt-3">更多文章可以从博客时间线继续浏览。</p>
+          </div>
+        </section>
+
+        <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <a href="/bloglist" class="btn btn-outline rounded-xl">返回博客时间线</a>
+          <a href={`/blog/detail?id=${encodeURIComponent(articleId)}`} class="text-gray-400 hover:text-emerald-400">
+            使用兼容阅读页
+          </a>
+        </nav>
+      </article>
+    </main>
+
+    <script define:vars={{ articleId, title, description, coverUrl, articleContent }}>
+      window.staticArticle = { articleId, title, description, coverUrl, content: articleContent };
+    </script>
+    <script>
+      import { blogApi } from "../../../api/blog";
+      import type { BlogListItem, BlogDetail } from "../../../api/blog";
+      import { createArticleLoadController, isArticleNotFoundError } from "../../../utils/article-load-state.js";
+      import { renderMarkdownToElement } from "../../../utils/md-renderer.js";
+      import { secureUrl } from "../../../utils/secure-url";
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const params = window.staticArticle;
+        const content = document.getElementById("article-content");
+        const progress = document.getElementById("readingProgress");
+        const stateRoot = document.querySelector("[data-article-load-state]");
+        if (!params || !content || !stateRoot) return;
+
+        const controller = createArticleLoadController(stateRoot, content);
+        let tocObserver: IntersectionObserver | undefined;
+
+        const updateProgress = () => {
+          const remaining = document.documentElement.scrollHeight - window.innerHeight;
+          const ratio = remaining > 0 ? window.scrollY / remaining : 0;
+          const percent = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+          if (progress) {
+            progress.style.width = `${percent}%`;
+            progress.setAttribute("aria-valuenow", String(percent));
+          }
+        };
+        let ticking = false;
+        const onScroll = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            updateProgress();
+            ticking = false;
+          });
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+
+        const articleEl = document.getElementById("article");
+        const toc = document.getElementById("toc");
+        const buildToc = () => {
+          if (!articleEl || !toc || !content) return;
+          toc.replaceChildren();
+          tocObserver?.disconnect();
+          const usedIds = new Set<string>();
+          const headings = Array.from(content.querySelectorAll("h2, h3"));
+          headings.forEach((heading) => {
+            const baseId = (heading.textContent || "section")
+              .trim()
+              .replace(/\s+/g, "-")
+              .toLowerCase()
+              .replace(/[^\w\u4e00-\u9fff-]/g, "") || "section";
+            let headingId = baseId;
+            let suffix = 2;
+            while (usedIds.has(headingId)) headingId = `${baseId}-${suffix++}`;
+            usedIds.add(headingId);
+            heading.id = heading.id || headingId;
+
+            const link = document.createElement("a");
+            link.href = `#${heading.id}`;
+            link.textContent = heading.textContent || "章节";
+            link.className = `block px-2 py-1 rounded-lg hover:bg-base-300 ${heading.tagName === "H3" ? "pl-4" : ""}`;
+            link.addEventListener("click", (event) => {
+              event.preventDefault();
+              heading.scrollIntoView({
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                block: "start",
+              });
+              history.replaceState(null, "", `#${heading.id}`);
+            });
+            toc.appendChild(link);
+          });
+
+          if ("IntersectionObserver" in window) {
+            const tocLinks = Array.from(toc.querySelectorAll("a"));
+            tocObserver = new IntersectionObserver((entries) => {
+              entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                tocLinks.forEach((link) => {
+                  link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+                });
+              });
+            }, { rootMargin: "0px 0px -70% 0px", threshold: 0.01 });
+            headings.forEach((heading) => tocObserver?.observe(heading));
+          }
+        };
+
+        const applyArticleMetadata = (article: BlogListItem | BlogDetail) => {
+          document.title = `${article.title || params.title} · Devin's Nest`;
+          const metaDescription = document.querySelector('meta[name="description"]');
+          if (metaDescription) metaDescription.setAttribute("content", article.desc || params.description);
+          const heading = document.querySelector("h1");
+          if (heading && article.title) heading.textContent = article.title;
+          const descriptionEl = document.querySelector("header p.text-gray-400");
+          if (descriptionEl && article.desc) descriptionEl.textContent = article.desc;
+          const cover = document.querySelector("header img");
+          if (cover && article.cover) cover.setAttribute("src", secureUrl(article.cover));
+        };
+
+        let lastDescription = params.description;
+        const shareButton = document.getElementById("btn-share");
+        shareButton?.addEventListener("click", async () => {
+          const shareData = { title: document.title, text: lastDescription, url: window.location.href };
+          try {
+            if (navigator.share) {
+              await navigator.share(shareData);
+            } else if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(window.location.href);
+              shareButton.textContent = "链接已复制";
+              window.setTimeout(() => { shareButton.textContent = "分享"; }, 1500);
+            } else {
+              shareButton.setAttribute("title", "当前浏览器不支持分享");
+            }
+          } catch (error) {
+            console.warn("Article share was not completed:", error);
+          }
+        });
+
+        const loadArticle = async () => {
+          const token = controller.begin();
+          try {
+            let markdownContent = typeof params.content === "string" ? params.content : "";
+            let article: BlogDetail | undefined;
+            if (!markdownContent.trim()) {
+              article = await blogApi.getBlogDetail(params.articleId).send();
+              if (!controller.isCurrent(token)) return false;
+              if (!article) {
+                controller.notFound(token);
+                return false;
+              }
+              if (typeof article.content !== "string" || !article.content.trim()) {
+                throw new Error("Article content is empty or invalid");
+              }
+              markdownContent = article.content;
+            }
+
+            // Render into a detached element first. A stale request can then
+            // never replace content committed by a newer retry.
+            const nextContent = document.createElement("div");
+            nextContent.className = "card-body prose prose-invert max-w-none article-content";
+            const rendered = await renderMarkdownToElement(markdownContent, nextContent, {
+              mermaid: true,
+              math: true,
+              sanitize: true,
+            });
+            if (!controller.isCurrent(token)) return false;
+            if (rendered === false) throw new Error("Markdown rendering failed");
+
+            nextContent.querySelectorAll("img").forEach((image) => {
+              const src = image.getAttribute("src");
+              if (src) image.setAttribute("src", secureUrl(src));
+            });
+            if (!controller.isCurrent(token)) return false;
+            content.replaceChildren(...Array.from(nextContent.childNodes));
+            lastDescription = article?.desc || params.description;
+            if (article) applyArticleMetadata(article);
+            if (!controller.complete(token)) return false;
+            buildToc();
+            updateProgress();
+            return true;
+          } catch (error) {
+            if (controller.isCurrent(token)) {
+              console.warn("Failed to load static article content:", error);
+              if (isArticleNotFoundError(error)) controller.notFound(token);
+              else controller.fail(token);
+            }
+            return false;
+          }
+        };
+
+        stateRoot.querySelector("[data-article-retry]")?.addEventListener("click", () => {
+          void loadArticle();
+        });
+
+        window.addEventListener("pagehide", () => {
+          controller.dispose();
+          tocObserver?.disconnect();
+          window.removeEventListener("scroll", onScroll);
+        }, { once: true });
+
+        await loadArticle();
+        updateProgress();
+      });
+    </script>
+    <script defer src="/libs/mouse-click.js"></script>
+  </body>
+</html>

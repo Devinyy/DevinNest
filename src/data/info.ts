@@ -4,21 +4,21 @@ export default {
   imgUrl: "/favicons/android-chrome-512x512.png",
   location: "ShangHai, China",
   titleCard: {
-    title: "羊羽 @Devin",
-    desc: "前端开发/个人博主（奔赴中…）/AI",
-    subdesc: "浙江理工大学20届本科",
-    url: "https://xxxx.com",
+    title: "AI 探索中",
+    desc: "在技术与生活之间，持续探索 AI 的可能",
+    subdesc: "记录想法、项目与日常",
+    url: "/bloglist",
     bgStyle:
       "bg-primary shadow-accent hover:bg-primary-focus hover:shadow-gray-500",
-    btnText: "关于我 · 了解更多",
+    btnText: "看看最近记录",
   },
   cvTitleCard: {
-    title: "羊羽 @Devin",
-    desc: "Project Manager @Bytedance\n前端开发者/个人博主（奔赴中…）/AI",
-    url: "https://xxxx.com",
+    title: "AI 探索中",
+    desc: "在技术与生活之间，持续探索 AI 的可能",
+    url: "/bloglist",
     bgStyle:
       "bg-primary shadow-accent hover:bg-primary-focus hover:shadow-gray-500 whitespace-pre-line",
-    btnText: "查看简历",
+    btnText: "看看最近记录",
   },
   blogCard: {
     title: "博客",
@@ -108,30 +108,19 @@ export default {
     },
   ],
   projectCardStart: {
-    title: "Laya-Model-Coloring-3D",
-    desc: "3D模型涂色Demo",
-    subdesc: "实现两种3D模型涂色方式",
-    url: "https://github.com/Devinyy/LayaModelColoring3D",
-    btnText: "冲鸭→ 🦆",
+    title: "DevinHarness",
+    desc: "AI 研发执行框架",
+    subdesc: "Devinyy/project-harness",
+    thirddesc: "规范、驱动和沉淀项目研发流程",
+    url: "https://github.com/Devinyy/project-harness",
+    btnText: "看看 →",
     bgStyle:
-      "bg-[#9AB2DE] shadow-[#2C3E50]/75 hover:shadow-[#2C3E50]",
-    textStyle: "text-black",
+      "bg-[#326FA8] shadow-[#326FA8]/75 hover:bg-[#326FA8]/75 hover:shadow-[#326FA8]",
+    textStyle: "text-white",
     btnStyle: "glass",
-    btnTextStyle: "text-black lowercase",
+    btnTextStyle: "text-white",
   },
   projectCards: [
-    {
-      title: "DevinHarness",
-      desc: "AI 研发执行框架",
-      fulldesc: "用于规范、驱动和沉淀项目研发流程的 AI 框架",
-      subdesc: "Devinyy/project-harness",
-      url: "https://github.com/Devinyy/project-harness",
-      btnStyle: "bg-[#4F8FCE] hover:bg-[#6EA8E8] text-white",
-      btnText: "看看 →",
-      textStyle: "text-white",
-      bgStyle:
-        "bg-[#326FA8] shadow-[#326FA8]/75 hover:bg-[#326FA8]/75 hover:shadow-[#326FA8]",
-    },
     {
       title: "devin-skills",
       desc: "个人 Skills 集合",
@@ -143,6 +132,18 @@ export default {
       textStyle: "text-white",
       bgStyle:
         "bg-[#5B4BC4] shadow-[#5B4BC4]/75 hover:bg-[#5B4BC4]/75 hover:shadow-[#5B4BC4]",
+    },
+    {
+      title: "Laya-Model-Coloring-3D",
+      desc: "3D模型涂色Demo",
+      fulldesc: "3D模型涂色Demo",
+      subdesc: "实现两种3D模型涂色方式",
+      url: "https://github.com/Devinyy/LayaModelColoring3D",
+      btnText: "冲鸭→ 🦆",
+      bgStyle:
+        "bg-[#9AB2DE] shadow-[#2C3E50]/75 hover:shadow-[#2C3E50]",
+      textStyle: "text-black",
+      btnStyle: "glass",
     },
     {
       title: "Framework",
@@ -163,8 +164,10 @@ export default {
       subdesc: "wiki网站",
       url: "https://kdyg2.kdyg2-wiki.xyz/#/",
       btnText: "去看看 →",
+      btnStyle: "bg-white/20 hover:bg-white/30 text-white backdrop-blur",
+      textStyle: "text-white",
       bgStyle:
-        "bg-primary hover:bg-primary-focus shadow-accent hover:shadow-gray-500 max-sm:hidden",
+        "bg-[linear-gradient(135deg,rgba(18,112,117,0.94),rgba(37,49,87,0.95)),url('https://kdyg2.kdyg2-wiki.xyz/favicon.png')] bg-[length:cover,5rem_5rem] bg-[position:center,calc(100%-1rem)_1rem] bg-no-repeat shadow-[#187075]/75 hover:shadow-[#187075] max-sm:hidden",
     },
   ],
   projectCardEnd: {
@@ -178,22 +181,8 @@ export default {
     btnStyle: "glass",
     btnTextStyle: "text-white capitalize",
   },
-  diaryCards: [
-    {
-      title: "台州行",
-      url: "/blog/daily?id=daily1",
-      bgStyle:
-        "bg-[url('https://dummyimage.com/170x304/9c9c9c/fff.png&text=台州行')] bg-cover bg-center shadow-accent hover:shadow-gray-500",
-      textStyle: "text-white",
-    },
-    {
-      title: "青甘环线之旅",
-      url: "/blog/daily?id=daily2",
-      bgStyle:
-        "bg-[url('https://dummyimage.com/170x304/9c9c9c/fff.png&text=青甘环线之旅')] bg-cover bg-center shadow-accent hover:shadow-gray-500",
-      textStyle: "text-white",
-    }
-  ],
+  // 没有可靠的本地缩略图时不展示演示碎片，避免把占位内容当作真实记录。
+  diaryCards: [],
   // musicCards: [
   //   {
   //     title: "为谁而为（原作 @COPY）",

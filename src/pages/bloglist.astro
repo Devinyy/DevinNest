@@ -3,6 +3,7 @@ import StickyNav from "../components/sticky_nav.astro";
 import CategoryIcon from "../components/category_icon.astro";
 import { blogApi } from "../api/blog";
 import type { BlogListItem, CategoryStat, TagStat } from "../api/blog";
+import { getBuildBlogSnapshot } from "../data/blog_build_snapshot";
 import type { TimelineGroup, TimelineItem } from "../data/blog_timeline";
 
 // 服务端获取数据
@@ -11,18 +12,32 @@ let categories: CategoryStat[] = [];
 let hotTags: TagStat[] = [];
 let timelineGroups: TimelineGroup[] = [];
 let timelineCount = 0;
+let blogDataError = false;
 
 try {
-  // 并行请求数据
-  const [listRes, categoriesRes, tagsRes] = await Promise.all([
-    blogApi.getBlogList({ pageSize: 1000 }).send(), // 获取所有文章用于时间线
+  // The list is shared with getStaticPaths and homepage cards so a build can
+  // never link to a static article route that was not generated in that build.
+  const blogSnapshot = await getBuildBlogSnapshot();
+  blogList = blogSnapshot.articles;
+  blogDataError = !blogSnapshot.ok;
+
+  // Statistics remain independent: a failed category/tag request must not
+  // discard the shared article timeline snapshot.
+  const [categoriesResult, tagsResult] = await Promise.allSettled([
     blogApi.getCategories().send(),
     blogApi.getHotTags().send()
   ]);
 
-  blogList = listRes.list;
-  categories = categoriesRes;
-  hotTags = tagsRes;
+  if (categoriesResult.status === "fulfilled" && Array.isArray(categoriesResult.value)) {
+    categories = categoriesResult.value;
+  } else {
+    blogDataError = true;
+  }
+  if (tagsResult.status === "fulfilled" && Array.isArray(tagsResult.value)) {
+    hotTags = tagsResult.value;
+  } else {
+    blogDataError = true;
+  }
   
   // 处理时间线数据分组
   const groups: Record<number, TimelineItem[]> = {};
@@ -56,8 +71,19 @@ try {
 
 } catch (error) {
   console.error('Failed to fetch blog data:', error);
-  // 可以在这里处理降级逻辑，比如使用静态数据
+  blogDataError = true;
 }
+
+const staticArticleIds = blogList.map((article) => String(article.id)).filter(Boolean);
+const legacyArticleHref = (id: string) => `/blog/detail?id=${encodeURIComponent(id)}`;
+const staticArticleHref = (id: string) => `/blog/article/${encodeURIComponent(id)}/`;
+const articleHref = (id: string) => staticArticleIds.includes(String(id))
+  ? staticArticleHref(String(id))
+  : legacyArticleHref(String(id));
+const displayCategories: CategoryStat[] = [
+  { id: "timeline", name: "时间线", count: timelineCount, icon: "timeline" },
+  ...categories.filter((category) => category.name !== "时间线"),
+];
 
 const allBlogPosts = timelineGroups.flatMap((group) =>
   group.items.map((item) => ({
@@ -117,7 +143,7 @@ declare global {
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="/favicons/apple-touch-icon.png"
+      href="/favicons/apple-touch-icon-180x180.png"
     />
     <link
       rel="icon"
@@ -187,26 +213,39 @@ declare global {
             <div class="card-body">
               <h1 class="text-2xl md:text-3xl font-bold mb-2">博客时间线</h1>
               <p class="text-gray-400 mb-4">记录那些让人心动的瞬间与思考</p>
+              <p
+                id="blog-data-status"
+                role="status"
+                aria-live="polite"
+                class:list={["text-sm text-amber-300 mb-4", !blogDataError && "hidden"]}
+              >
+                最新内容同步失败，当前显示构建时快照。
+              </p>
 
-              {timelineGroups.map((group: TimelineGroup) => (
-                <div class="mb-6" data-year-group>
-                  <h2 class={`text-xl md:text-2xl font-semibold ${group.year === currentYear ? 'text-emerald-400' : 'text-gray-300'} mb-2`}>{group.year} 年</h2>
-                  <div class={`timeline ${group.year === currentYear ? 'timeline-current' : ''}`}>
-                    {group.items.map((it: TimelineItem) => {
-                      const dt = parseTimelineDate(it.time, group.year);
-                      const isRecentSixMonths = !!dt && group.year === currentYear && isWithinLastMonths(dt, 6);
-                      return (
-                        <div class={`timeline-item ${isRecentSixMonths ? 'is-current-year' : ''}`} data-category={it.category ?? ""} data-tags={(it.tags ?? []).join(",")}>
-                          <div class="flex items-start gap-3 text-sm md:text-base">
-                            <span class="text-gray-400 w-16 shrink-0">{it.time}</span>
-                            <a href={`/blog/detail?id=${it.blogId}`} class="hover:text-white text-gray-200">{it.title}</a>
+              <div id="timeline-groups">
+                {timelineGroups.map((group: TimelineGroup) => (
+                  <div class="mb-6" data-year-group>
+                    <h2 class={`text-xl md:text-2xl font-semibold ${group.year === currentYear ? 'text-emerald-400' : 'text-gray-300'} mb-2`}>{group.year} 年</h2>
+                    <div class={`timeline ${group.year === currentYear ? 'timeline-current' : ''}`}>
+                      {group.items.map((it: TimelineItem) => {
+                        const dt = parseTimelineDate(it.time, group.year);
+                        const isRecentSixMonths = !!dt && group.year === currentYear && isWithinLastMonths(dt, 6);
+                        return (
+                          <div class={`timeline-item ${isRecentSixMonths ? 'is-current-year' : ''}`} data-category={it.category ?? ""} data-tags={(it.tags ?? []).join(",")}>
+                            <div class="flex items-start gap-3 text-sm md:text-base">
+                              <span class="text-gray-400 w-16 shrink-0">{it.time}</span>
+                              <a href={articleHref(it.blogId)} class="hover:text-white text-gray-200">{it.title}</a>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <p id="timeline-empty" class:list={["text-center text-gray-400 py-8", timelineGroups.length > 0 && "hidden"]}>
+                {blogDataError ? "文章暂时无法加载，请稍后重试。" : "暂无文章内容"}
+              </p>
             </div>
           </div>
 
@@ -239,7 +278,7 @@ declare global {
               <h3 class="text-lg md:text-xl font-bold">分类</h3>
               <div class="divider my-2"></div>
               <ul class="space-y-2" id="categoryList">
-                {categories.map((c: CategoryStat, idx) => (
+                {displayCategories.map((c: CategoryStat) => (
                   <li>
                     <a href="#" data-category-link={c.name} class="block px-3 py-2 rounded-lg hover:bg-base-300">
                       <div class="flex items-center justify-between">
@@ -249,7 +288,7 @@ declare global {
                         </span>
                       </div>
                       {c.name === '时间线' ? (
-                        <p class="text-xs text-gray-500 mt-1">{timelineCount}条记录</p>
+                        <p class="text-xs text-gray-500 mt-1"><span data-timeline-count>{timelineCount}</span>条记录</p>
                       ) : (
                         c.count !== undefined ? (
                           <p class="text-xs text-gray-500 mt-1">{c.count}篇文章</p>
@@ -278,7 +317,10 @@ declare global {
         </aside>
       </div>
     </main>
-    <script is:inline>
+    <script>
+      // @ts-nocheck
+      import { blogApi } from "../api/blog";
+
       document.addEventListener("DOMContentLoaded", () => {
         try {
           const dataScript = document.getElementById('blog-posts-data');
@@ -290,6 +332,243 @@ declare global {
         } catch (e) {
           console.error('Failed to parse blog posts data:', e);
           window.__allBlogPosts__ = [];
+        }
+
+        const timelineGroupsEl = document.getElementById('timeline-groups');
+        const timelineEmptyEl = document.getElementById('timeline-empty');
+        const timelineCountEl = document.querySelector('[data-timeline-count]');
+        const categoryListEl = document.getElementById('categoryList');
+        const tagListEl = document.getElementById('tagList');
+        const blogDataStatusEl = document.getElementById('blog-data-status');
+
+        const staticArticleIdSet = new Set(
+          (() => {
+            const script = document.getElementById('static-article-ids');
+            try {
+              const parsed = JSON.parse(script?.textContent || '[]');
+              return Array.isArray(parsed) ? parsed.map(String) : [];
+            } catch {
+              return [];
+            }
+          })()
+        );
+
+        function escapeHtml(value) {
+          return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function legacyArticleHref(id) {
+          return `/blog/detail?id=${encodeURIComponent(id)}`;
+        }
+
+        function articleHref(id) {
+          const articleId = String(id || '');
+          return staticArticleIdSet.has(articleId)
+            ? `/blog/article/${encodeURIComponent(articleId)}/`
+            : legacyArticleHref(articleId);
+        }
+
+        const categoryIconPaths = {
+          code: '<path d="M9 7L4 12l5 5"/><path d="M15 7l5 5-5 5"/>',
+          palette: '<path d="M12 21a8 8 0 1 1 0-16 6 6 0 0 1 6 6c0 1.657-1.343 3-3 3h-2a1 1 0 0 0-1 1v2"/><circle cx="7.5" cy="10" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/><circle cx="16" cy="12" r="1"/>',
+          home: '<path d="M3 10.5L12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/>',
+          plane: '<path d="M3 11l18-8-8 18-2-7-8-3z"/>',
+          book: '<path d="M4 5h10a4 4 0 0 1 4 4v10H8a4 4 0 0 0-4-4V5z"/><path d="M8 19V9a4 4 0 0 1 4-4"/>',
+          camera: '<rect x="3" y="6" width="18" height="14" rx="2" ry="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l2-2h4l2 2"/>',
+          timeline: '<path d="M4 4v16"/><circle cx="8" cy="6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="16" cy="18" r="1.5"/>',
+        };
+
+        function categoryIconMarkup(icon) {
+          const key = Object.prototype.hasOwnProperty.call(categoryIconPaths, icon) ? icon : 'home';
+          return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true">${categoryIconPaths[key]}</svg>`;
+        }
+
+        function categoryIconName(category) {
+          const known = {
+            技术: 'code', 杂谈: 'home', 摄影: 'camera', 阅读: 'book',
+            旅行: 'plane', 生活: 'home', 设计: 'palette', 时间线: 'timeline',
+          };
+          const aliases = {
+            CodeOutlined: 'code', CloudOutlined: 'home', CameraOutlined: 'camera',
+            ReadOutlined: 'book', SendOutlined: 'plane', CoffeeOutlined: 'home',
+            FormatPainterOutlined: 'palette',
+          };
+          return known[category.name] || aliases[category.icon] || category.icon || 'home';
+        }
+
+        function setBlogDataStatus(hasFailure) {
+          if (!(blogDataStatusEl instanceof HTMLElement)) return;
+          blogDataStatusEl.classList.toggle('hidden', !hasFailure);
+          blogDataStatusEl.textContent = hasFailure
+            ? '最新内容同步失败，当前显示构建时快照。'
+            : '';
+        }
+
+        function toRuntimePosts(list) {
+          return list
+            .filter((item) => item && item.id)
+            .map((item) => {
+              const date = new Date(item.date);
+              const validDate = !Number.isNaN(date.getTime());
+              const year = validDate ? date.getFullYear() : 0;
+              const month = validDate ? String(date.getMonth() + 1).padStart(2, '0') : '';
+              const day = validDate ? String(date.getDate()).padStart(2, '0') : '';
+              return {
+                blogId: String(item.id),
+                time: validDate ? `${year}-${month}-${day}` : String(item.date || ''),
+                year,
+                title: String(item.title || '未命名文章'),
+                category: item.category?.name || '',
+                tags: Array.isArray(item.tags) ? item.tags : [],
+              };
+            });
+        }
+
+        function renderCategoryStats(stats, total, posts = getAllArticles()) {
+          if (!(categoryListEl instanceof HTMLElement)) return;
+          const categoryCounts = new Map();
+          posts.forEach((post) => {
+            const name = String(post.category || '').trim();
+            if (name) categoryCounts.set(name, (categoryCounts.get(name) || 0) + 1);
+          });
+          const apiCategories = Array.isArray(stats) ? stats : [];
+          const apiNames = new Set(apiCategories.map((entry) => String(entry.name || '').trim()));
+          const listCategories = [...categoryCounts.entries()]
+            .filter(([name]) => !apiNames.has(name))
+            .map(([name, count]) => ({ id: `runtime-${name}`, name, count, icon: '' }));
+          const entries = [
+            { id: 'timeline', name: '时间线', count: total, icon: 'timeline' },
+            ...apiCategories,
+            ...listCategories,
+          ].filter((entry, index, all) => all.findIndex((item) => item.name === entry.name) === index);
+
+          categoryListEl.innerHTML = entries.map((category) => {
+            const name = String(category.name || '未分类');
+            const count = name === '时间线'
+              ? total
+              : (categoryCounts.has(name)
+                ? categoryCounts.get(name)
+                : (Number.isFinite(Number(category.count)) ? Number(category.count) : 0));
+            return `<li>
+              <a href="#" data-category-link="${escapeHtml(name)}" class="block px-3 py-2 rounded-lg hover:bg-base-300">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium text-gray-200" data-category-text>${escapeHtml(name)}</span>
+                  <span data-category-icon class="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 bg-base-300">
+                    ${categoryIconMarkup(categoryIconName(category))}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1"><span data-category-count>${count}</span>${name === '时间线' ? '条记录' : '篇文章'}</p>
+              </a>
+            </li>`;
+          }).join('');
+        }
+
+        function renderTagStats(stats, posts = getAllArticles()) {
+          if (!(tagListEl instanceof HTMLElement)) return;
+          const tagCounts = new Map();
+          posts.forEach((post) => {
+            (Array.isArray(post.tags) ? post.tags : []).forEach((tag) => {
+              const name = String(tag || '').trim();
+              if (name) tagCounts.set(name, (tagCounts.get(name) || 0) + 1);
+            });
+          });
+          const apiTags = Array.isArray(stats) ? stats : [];
+          const apiNames = new Set(apiTags.map((entry) => String(entry.name || '').trim()));
+          const listTags = [...tagCounts.entries()]
+            .filter(([name]) => !apiNames.has(name))
+            .map(([name, count]) => ({ name, count }));
+          const entries = [...apiTags, ...listTags];
+          tagListEl.innerHTML = entries.map((tag) => {
+            const name = String(tag.name || '').trim();
+            if (!name) return '';
+            const count = tagCounts.has(name)
+              ? tagCounts.get(name)
+              : (Number.isFinite(Number(tag.count)) ? Number(tag.count) : 0);
+            return `<a href="#" data-tag-link="${escapeHtml(name)}" class="px-3 py-1 rounded-full bg-base-300 text-gray-200 hover:bg-base-200">
+              ${escapeHtml(name)} <span class="text-xs opacity-60">(${count})</span>
+            </a>`;
+          }).join('');
+        }
+
+        function renderRuntimeTimeline(posts) {
+          if (!(timelineGroupsEl instanceof HTMLElement)) return;
+          const groups = new Map();
+          posts.forEach((post) => {
+            const year = post.year || 0;
+            if (!groups.has(year)) groups.set(year, []);
+            groups.get(year).push(post);
+          });
+
+          const sortedGroups = [...groups.entries()].sort((a, b) => b[0] - a[0]);
+          timelineGroupsEl.innerHTML = sortedGroups.map(([year, items]) => {
+            items.sort((a, b) => String(b.time).localeCompare(String(a.time)));
+            const heading = year ? `${year} 年` : '未标注日期';
+            const currentClass = year === new Date().getFullYear() ? 'text-emerald-400' : 'text-gray-300';
+            const lineClass = year === new Date().getFullYear() ? 'timeline-current' : '';
+            const rows = items.map((item) => `
+              <div class="timeline-item" data-category="${escapeHtml(item.category)}" data-tags="${escapeHtml(item.tags.join(','))}">
+                <div class="flex items-start gap-3 text-sm md:text-base">
+                  <span class="text-gray-400 w-16 shrink-0">${escapeHtml(year ? String(item.time).slice(5) : item.time)}</span>
+                  <a href="${articleHref(item.blogId)}" class="hover:text-white text-gray-200">${escapeHtml(item.title)}</a>
+                </div>
+              </div>
+            `).join('');
+            return `<div class="mb-6" data-year-group>
+              <h2 class="text-xl md:text-2xl font-semibold ${currentClass} mb-2">${heading}</h2>
+              <div class="timeline ${lineClass}">${rows}</div>
+            </div>`;
+          }).join('');
+
+          if (timelineCountEl) timelineCountEl.textContent = String(posts.length);
+          if (timelineEmptyEl instanceof HTMLElement) {
+            timelineEmptyEl.classList.toggle('hidden', posts.length > 0);
+            timelineEmptyEl.textContent = posts.length ? '' : '暂无文章内容';
+          }
+        }
+
+        async function refreshRuntimeBlogData() {
+          const [listResult, categoriesResult, tagsResult] = await Promise.allSettled([
+            blogApi.getBlogList({ pageSize: 1000 }).send(),
+            blogApi.getCategories().send(),
+            blogApi.getHotTags().send(),
+          ]);
+          let hasFailure = false;
+
+          if (listResult.status === 'fulfilled' && Array.isArray(listResult.value?.list)) {
+            const runtimePosts = toRuntimePosts(listResult.value.list);
+            window.__allBlogPosts__ = runtimePosts;
+            renderRuntimeTimeline(runtimePosts);
+            if ((activeCategory && activeCategory !== '时间线') || activeTag) renderList();
+          } else {
+            // API 不可用时保留构建期时间线和筛选快照。
+            hasFailure = true;
+            console.warn('Failed to refresh blog timeline:', listResult.reason);
+          }
+
+          if (categoriesResult.status === 'fulfilled' && Array.isArray(categoriesResult.value)) {
+            renderCategoryStats(categoriesResult.value, getAllArticles().length);
+            bindCategoryLinks();
+            updateCategoryActiveStyles();
+          } else {
+            hasFailure = true;
+            console.warn('Failed to refresh blog categories:', categoriesResult.reason);
+          }
+
+          if (tagsResult.status === 'fulfilled' && Array.isArray(tagsResult.value)) {
+            renderTagStats(tagsResult.value);
+            bindTagLinks();
+            updateTagActiveStyles();
+          } else {
+            hasFailure = true;
+            console.warn('Failed to refresh blog tags:', tagsResult.reason);
+          }
+
+          setBlogDataStatus(hasFailure);
         }
 
         // 视图状态
@@ -333,9 +612,7 @@ declare global {
           if (listView instanceof HTMLElement) listView.classList.remove('hidden');
         }
 
-        // 当展示时间线视图时，将“时间线”分类高亮为绿色
-        function setTimelineActiveCategory() {
-          activeCategory = '时间线';
+        function updateCategoryActiveStyles() {
           document.querySelectorAll('[data-category-link]').forEach((el) => {
             const isActive = el.getAttribute('data-category-link') === activeCategory;
             const text = el.querySelector('[data-category-text]');
@@ -351,6 +628,22 @@ declare global {
               icon.classList.toggle('bg-base-300', !isActive);
             }
           });
+        }
+
+        function updateTagActiveStyles() {
+          document.querySelectorAll('[data-tag-link]').forEach((el) => {
+            const isActive = el.getAttribute('data-tag-link') === activeTag;
+            el.classList.toggle('bg-emerald-500/25', !!isActive);
+            el.classList.toggle('bg-base-300', !isActive);
+            el.classList.toggle('text-emerald-400', !!isActive);
+            el.classList.toggle('text-gray-200', !isActive);
+          });
+        }
+
+        // 当展示时间线视图时，将“时间线”分类高亮为绿色
+        function setTimelineActiveCategory() {
+          activeCategory = '时间线';
+          updateCategoryActiveStyles();
         }
 
         function normalizeTag(tag) {
@@ -408,7 +701,7 @@ declare global {
               
               // 移除大封面占位，改为紧凑的卡片布局
               return `
-                <a href="/blog/detail?id=${a.blogId}" class="group relative flex flex-col p-4 sm:p-5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 w-full">
+                <a href="${articleHref(a.blogId)}" class="group relative flex flex-col p-4 sm:p-5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-300 w-full">
                   <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
                     <span class="flex items-center gap-1.5 font-mono text-emerald-500/80">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -446,8 +739,11 @@ declare global {
           }
         }
 
-        // 分类点击：列表/时间线切换
-        document.querySelectorAll('[data-category-link]').forEach((a) => {
+        // 分类点击：列表/时间线切换。使用 data-bound 避免统计刷新后重复绑定。
+        function bindCategoryLinks() {
+          document.querySelectorAll('[data-category-link]').forEach((a) => {
+            if (a.getAttribute('data-bound') === 'true') return;
+            a.setAttribute('data-bound', 'true');
           a.addEventListener('click', (e) => {
             e.preventDefault();
             const name = a.getAttribute('data-category-link');
@@ -455,21 +751,7 @@ declare global {
             activeCategory = wasSelected ? null : name;
 
             // 更新选中态样式
-            document.querySelectorAll('[data-category-link]').forEach((el) => {
-              const isActive = el.getAttribute('data-category-link') === activeCategory;
-              const text = el.querySelector('[data-category-text]');
-              if (text) {
-                text.classList.toggle('text-emerald-400', !!isActive);
-                text.classList.toggle('text-gray-200', !isActive);
-              }
-              const icon = el.querySelector('[data-category-icon]');
-              if (icon) {
-                icon.classList.toggle('text-emerald-400', !!isActive);
-                icon.classList.toggle('bg-emerald-500/25', !!isActive);
-                icon.classList.toggle('text-gray-400', !isActive);
-                icon.classList.toggle('bg-base-300', !isActive);
-              }
-            });
+            updateCategoryActiveStyles();
 
             // 点击“时间线” -> 回到时间线视图并高亮“时间线”分类，同时取消已选标签
             if (name === '时间线') {
@@ -503,11 +785,15 @@ declare global {
             currentPage = 1;
             renderList();
             showListView();
+            });
           });
-        });
+        }
 
         // 标签点击：进入列表视图（按标签）
-        document.querySelectorAll('[data-tag-link]').forEach((a) => {
+        function bindTagLinks() {
+          document.querySelectorAll('[data-tag-link]').forEach((a) => {
+            if (a.getAttribute('data-bound') === 'true') return;
+            a.setAttribute('data-bound', 'true');
           a.addEventListener('click', (e) => {
             e.preventDefault();
             const name = a.getAttribute('data-tag-link');
@@ -515,13 +801,7 @@ declare global {
             activeTag = wasSelected ? null : name;
 
             // 更新选中态样式（选中时文字变绿）
-            document.querySelectorAll('[data-tag-link]').forEach((el) => {
-              const isActive = el.getAttribute('data-tag-link') === activeTag;
-              el.classList.toggle('bg-emerald-500/25', !!isActive);
-              el.classList.toggle('bg-base-300', !isActive);
-              el.classList.toggle('text-emerald-400', !!isActive);
-              el.classList.toggle('text-gray-200', !isActive);
-            });
+            updateTagActiveStyles();
 
             if (wasSelected) {
               // 标签取消：若仍有分类选中，则显示分类列表；否则回到时间线
@@ -556,8 +836,9 @@ declare global {
             currentPage = 1;
             renderList();
             showListView();
+            });
           });
-        });
+        }
 
         // 排序按钮 (已移除)
         // sortLatestBtn && sortLatestBtn.addEventListener('click', ...);
@@ -612,13 +893,17 @@ declare global {
         });
 
         // 初始：时间线视图，并高亮“时间线”分类
+        bindCategoryLinks();
+        bindTagLinks();
         showTimelineView();
         setTimelineActiveCategory();
         // updateSortButtons(); // Removed
+        void refreshRuntimeBlogData();
       });
     </script>
     <script defer src="/libs/mouse-click.js"></script>
     <!-- 注入服务端数据 -->
     <script type="application/json" id="blog-posts-data" set:html={JSON.stringify(allBlogPosts)}></script>
+    <script type="application/json" id="static-article-ids" set:html={JSON.stringify(staticArticleIds)}></script>
   </body>
 </html>

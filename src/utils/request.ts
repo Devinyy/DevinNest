@@ -1,6 +1,7 @@
 import { createAlova, type Method } from 'alova';
 import adapterFetch from 'alova/fetch';
 import { retry } from 'alova/server';
+import { parseApiResponse } from './api-response.js';
 
 // 定义 API 响应的基础结构
 export interface ApiResponse<T = any> {
@@ -59,7 +60,15 @@ const handleRequestError = (error: any, hideErrorMsg = false) => {
     // }
   }
 
-  return new Error(errorMessage);
+  const wrappedError = new Error(errorMessage) as Error & {
+    status?: number;
+    response?: unknown;
+  };
+  if (error && typeof error === 'object') {
+    if ('status' in error) wrappedError.status = error.status;
+    if ('response' in error) wrappedError.response = error.response;
+  }
+  return wrappedError;
 };
 
 /**
@@ -79,19 +88,7 @@ export const alovaInstance = createAlova({
   },
 
   responded: {
-    onSuccess: async (response, method) => {
-      const isJson = response.headers.get('content-type')?.includes('json');
-      
-      if (isJson) {
-        const json = await response.json();
-        // 业务状态码处理
-        if (json.code !== undefined && json.code !== 200) {
-          throw new Error(json.message || '业务请求失败');
-        }
-        return json.data !== undefined ? json.data : json;
-      }
-      return response.blob();
-    },
+    onSuccess: (response) => parseApiResponse(response),
     
     onError: (err, method) => {
       // 可以在这里统一处理，也可以在 catch 中处理

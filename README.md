@@ -101,7 +101,7 @@ yarn preview
 
 ## 🐳 部署指南
 
-### 方式一：使用 Shell 脚本一键部署 (推荐)
+### 方式一：使用 Shell 脚本手动部署
 
 项目内置了 `deploy.sh` 脚本，可将本地代码一键同步并部署到阿里云服务器。
 
@@ -126,13 +126,22 @@ yarn preview
 
 ### 方式二：使用 GitHub Actions 自动部署
 
-项目已配置 `.github/workflows/deploy.yml`，推送到 `main` 分支时自动触发部署。
+项目已配置 `.github/workflows/deploy.yml`。推送到默认 `master` 分支后，流水线会先安装依赖、运行回归测试并构建静态站点，再通过 SSH 上传只包含发布产物的压缩包并启动 Docker Compose。
 
-**配置**:
-在 GitHub 仓库的 Settings -> Secrets and variables -> Actions 中添加以下 Secrets:
-- `SERVER_HOST`: 服务器 IP 地址
-- `SERVER_USER`: 服务器用户名 (如 root)
-- `SERVER_SSH_KEY`: 服务器 SSH 私钥 (内容)
+发布使用提交 SHA、GitHub run id 和运行次数保存的唯一 release 目录，健康检查通过后才切换 `current` 链接。每个成功 release 都会固定记录实际运行镜像，后续失败回滚使用该镜像并禁止重新构建；缺少固定镜像元数据时会直接停止。空目录的首次发布没有可回滚版本，失败后需要先人工清理现场并确认服务器状态；通过现有容器核验的首次迁移会先建立 legacy 回滚基线。流水线不会同步 `.git`、`node_modules` 或环境文件，也不会删除服务器上的项目目录。
+
+发布前会检查项目目录、`current` 链接和名为 `homepage` 的 Docker 容器身份。首次发布可以在现有容器确认为 Compose 项目 `homepage`、工作目录为 `SERVER_PROJECT_DIR` 且健康检查通过时，把它的静态发布文件、容器检查信息和现有镜像 ID 保存到 `releases/legacy-*` 作为回滚基线；回滚使用该镜像的固定标签并禁止重新构建。未通过这些检查的旧手动部署、非预期容器或无法确认归属时会直接停止，不会接管或覆盖它。Compose 更新不会使用 `--remove-orphans`。
+
+**配置**：
+在 GitHub 仓库的 Settings → Secrets and variables → Actions 中添加以下 Secrets：
+
+- `SERVER_HOST`：服务器域名或 IP 地址
+- `SERVER_USER`：服务器 SSH 用户名
+- `SERVER_SSH_KEY`：对应用户的 SSH 私钥（完整内容）
+- `SERVER_HOST_FINGERPRINT`：已通过可信渠道核验的服务器主机指纹，使用 `SHA256:...` 格式；不要把未经核验的临时 `ssh-keyscan` 结果直接当作信任值
+- `SERVER_PROJECT_DIR`：可选，服务器项目目录，默认 `/opt/homepage`
+
+服务器需要预先安装 Docker Compose，并在 `SERVER_PROJECT_DIR` 对应的主机上准备好 `/etc/ssl/certs/devinnest.top.pem` 与 `/etc/ssl/private/devinnest.top.key` 证书文件，同时安装 `curl` 或 `wget` 供发布后的健康检查使用。首次使用前，请通过可信渠道核对主机指纹，再用同一用户手动验证 SSH 登录和 Docker 权限；工作流只负责后续自动发布，不会自动安装 Docker、修改证书或迁移旧的手动容器。
 
 ### 方式三：手动 Docker 部署
 

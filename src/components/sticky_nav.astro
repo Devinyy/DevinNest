@@ -20,20 +20,9 @@ const { showAuth = false, showImmediately = false } = Astro.props;
         <a href="/" class="hidden sm:inline text-gray-300 hover:text-white">首页</a>
         <a href="/bloglist" class="hidden sm:inline text-gray-300 hover:text-white">博客</a>
         <a href="/fragmentlist" class="hidden sm:inline text-gray-300 hover:text-white">日常</a>
-        <a href="/funny" class="hidden sm:inline text-gray-300 hover:text-white">Funny</a>
-        <a href="/about" class="hidden sm:inline text-gray-300 hover:text-white">关于</a>
-        <a href="/contact" class="hidden sm:inline text-gray-300 hover:text-white">联系</a>
       </div>
-      <!-- 右侧：搜索 + 收纳按钮（手机可展开剩余功能）；桌面保持原样 -->
+      <!-- 右侧：收纳按钮（手机可展开剩余功能） -->
       <div class="flex items-center gap-3">
-        <div class="relative">
-          <input
-            type="text"
-            placeholder="搜索文章…"
-            class="w-28 sm:w-72 h-8 rounded-full bg-gray-800 text-gray-100 placeholder-gray-500 outline-none pl-4 pr-9 focus:ring-2 focus:ring-emerald-500"
-          />
-          <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">Q</span>
-        </div>
         <!-- 收纳按钮：仅在手机显示，点击展开功能按钮 -->
         <button id="navToggle" class="sm:hidden px-3 py-1 rounded-md bg-gray-800 text-gray-200 hover:bg-gray-700" aria-expanded="false" aria-controls="mobilePanel" aria-label="打开菜单">☰</button>
         {showAuth ? (
@@ -45,7 +34,7 @@ const { showAuth = false, showImmediately = false } = Astro.props;
       </div>
     </nav>
   </div>
-  <!-- 手机展开层：展示剩余功能按钮（博客、关于、联系等） -->
+  <!-- 手机展开层：仅展示当前可访问的内容入口 -->
   <div
     id="mobilePanel"
     class="sm:hidden fixed top-12 left-0 right-0 bg-[#0f1115]/95 backdrop-blur-sm border-b border-gray-800 transform -translate-y-4 opacity-0 pointer-events-none transition-all duration-200"
@@ -55,9 +44,6 @@ const { showAuth = false, showImmediately = false } = Astro.props;
         <a href="/" class="text-gray-300 hover:text-white">首页</a>
         <a href="/bloglist" class="text-gray-300 hover:text-white">博客</a>
         <a href="/fragmentlist" class="text-gray-300 hover:text-white">日常</a>
-        <a href="/funny" class="text-gray-300 hover:text-white">Funny</a>
-        <a href="/about" class="text-gray-300 hover:text-white">关于</a>
-        <a href="/contact" class="text-gray-300 hover:text-white">联系</a>
         {showAuth ? (
           <>
             <a href="/login" class="px-3 py-1 rounded-md bg-gray-800 text-gray-200">登录</a>
