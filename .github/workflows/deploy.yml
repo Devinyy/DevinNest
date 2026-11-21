@@ -64,6 +64,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    env:
+      RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      RELEASE_TMP_DIR: /tmp/devinnest-release-${{ github.run_id }}-${{ github.run_attempt }}
+      RELEASE_ARCHIVE: /tmp/devinnest-release-${{ github.run_id }}-${{ github.run_attempt }}/devinnest-release.tar.gz
 
     steps:
       - name: Download release archive
@@ -87,6 +91,26 @@ jobs:
             *) echo "SERVER_HOST_FINGERPRINT must use the SHA256:... format" >&2; exit 1 ;;
           esac
 
+      - name: Prepare unique release directory
+        uses: appleboy/ssh-action@v1.2.3
+        env:
+          RELEASE_TMP_DIR: ${{ env.RELEASE_TMP_DIR }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          fingerprint: ${{ secrets.SERVER_HOST_FINGERPRINT }}
+          envs: RELEASE_TMP_DIR
+          script_stop: true
+          script: |
+            set -euo pipefail
+            case "$RELEASE_TMP_DIR" in
+              /tmp/devinnest-release-[0-9]*-[0-9]*) ;;
+              *) echo "Unexpected release temporary directory" >&2; exit 1 ;;
+            esac
+            mkdir -p -- "$RELEASE_TMP_DIR"
+            chmod 700 -- "$RELEASE_TMP_DIR"
+
       - name: Upload release to server
         uses: appleboy/scp-action@v1.0.0
         with:
@@ -95,26 +119,27 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           fingerprint: ${{ secrets.SERVER_HOST_FINGERPRINT }}
           source: devinnest-release.tar.gz
-          target: /tmp/
+          target: ${{ env.RELEASE_TMP_DIR }}/
           overwrite: true
 
       - name: Activate release
         uses: appleboy/ssh-action@v1.2.3
         env:
-          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          RELEASE_ID: ${{ env.RELEASE_ID }}
           PROJECT_DIR: ${{ secrets.SERVER_PROJECT_DIR || '/opt/homepage' }}
+          ARCHIVE: ${{ env.RELEASE_ARCHIVE }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           fingerprint: ${{ secrets.SERVER_HOST_FINGERPRINT }}
-          envs: RELEASE_ID,PROJECT_DIR
+          envs: RELEASE_ID,PROJECT_DIR,ARCHIVE
           script_stop: true
           script: |
             set -euo pipefail
             SCRIPT_TMP="$(mktemp /tmp/devinnest-activate.XXXXXX.sh)"
             trap 'rm -f "$SCRIPT_TMP"' EXIT
-            tar -xOzf /tmp/devinnest-release.tar.gz scripts/activate-release.sh > "$SCRIPT_TMP"
+            tar -xOzf "$ARCHIVE" scripts/activate-release.sh > "$SCRIPT_TMP"
             chmod 700 "$SCRIPT_TMP"
-            RELEASE_ID="$RELEASE_ID" PROJECT_DIR="$PROJECT_DIR" \
-              ARCHIVE=/tmp/devinnest-release.tar.gz bash "$SCRIPT_TMP"
+            RELEASE_ID="$RELEASE_ID" PROJECT_DIR="$PROJECT_DIR" ARCHIVE="$ARCHIVE" \
+              bash "$SCRIPT_TMP"
