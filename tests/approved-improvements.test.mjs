@@ -94,6 +94,21 @@ test("each built article page exposes server-rendered share metadata", async () 
   assert.match(page, /devinnest\.top/);
 });
 
+test("production builds fail closed when the blog API fails and validate static routes", async () => {
+  const workflow = await source(".github/workflows/deploy.yml");
+  const route = await source("src/pages/blog/article/[id].astro");
+  const validator = await source("build/validate-static-articles.js");
+
+  assert.match(workflow, /PUBLIC_API_BASE_URL:\s*https:\/\/devinnest-api\.top:8443\/api/);
+  assert.match(workflow, /run: node build\/validate-static-articles\.js/);
+  assert.match(route, /if \(!snapshot\.ok\)/);
+  assert.match(route, /refusing to publish an empty static article route set/);
+  assert.match(validator, /PUBLIC_API_BASE_URL is required/);
+  assert.match(validator, /expectedIds/);
+  assert.match(validator, /actualIds/);
+  assert.match(validator, /unexpected=/);
+});
+
 test("production site configuration has a real fallback", async () => {
   const config = await source("astro.config.mjs");
 

@@ -47,6 +47,12 @@ jobs:
         run: npm run build
         env:
           ASTRO_SITE: https://devinnest.top
+          PUBLIC_API_BASE_URL: https://devinnest-api.top:8443/api
+
+      - name: Validate static article routes
+        run: node build/validate-static-articles.js
+        env:
+          PUBLIC_API_BASE_URL: https://devinnest-api.top:8443/api
 
       - name: Create release archive
         run: tar -czf devinnest-release.tar.gz dist Dockerfile docker-compose.yml nginx.conf scripts/activate-release.sh

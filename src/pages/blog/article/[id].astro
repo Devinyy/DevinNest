@@ -13,6 +13,11 @@ import { secureUrl } from "../../../utils/secure-url";
  */
 export async function getStaticPaths() {
   const snapshot = await getBuildBlogSnapshot();
+  if (!snapshot.ok) {
+    throw new Error(
+      "Build-time blog list request failed; refusing to publish an empty static article route set.",
+    );
+  }
 
   return snapshot.articles.map((article) => ({
     params: { id: article.id },
