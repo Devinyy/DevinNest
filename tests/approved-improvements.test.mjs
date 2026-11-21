@@ -248,6 +248,16 @@ test("legacy and static article pages keep the header aligned with the content a
   assert.doesNotMatch(staticPage, /<article class="max-w-4xl mx-auto">/);
 });
 
+test("404 game fits its 404 glyph on mobile and binds the animation loop before scheduling", async () => {
+  const page = await source("src/pages/404.astro");
+
+  assert.match(page, /this\.loop = this\.loop\.bind\(this\);\s*this\.init\(\)/);
+  assert.doesNotMatch(page, /this\.animationId = requestAnimationFrame\(this\.loop\);\s*this\.init\(\)/);
+  assert.match(page, /const sidePadding =/);
+  assert.match(page, /const totalWidth = cols \* brickWidth \+ Math\.max\(0, cols - 1\) \* CONFIG\.brickGap/);
+  assert.match(page, /startX = Math\.max\(sidePadding, \(this\.width - totalWidth\) \/ 2\)/);
+});
+
 test("article retry and lifecycle listeners are registered before the first await", async () => {
   const legacy = await source("src/pages/blog/detail.astro");
   const staticPage = await source("src/pages/blog/article/[id].astro");

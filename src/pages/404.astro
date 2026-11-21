@@ -161,7 +161,6 @@ import StickyNav from "../components/sticky_nav.astro";
             this.bricks = [];
             this.particles = [];
             this.mouseX = this.width / 2;
-            this.animationId = requestAnimationFrame(this.loop);
             
             this.ball = {
                 x: this.width / 2,
@@ -178,10 +177,10 @@ import StickyNav from "../components/sticky_nav.astro";
                 height: CONFIG.paddleHeight
             };
 
+            this.loop = this.loop.bind(this);
             this.init();
             this.bindEvents();
-            this.loop = this.loop.bind(this);
-            requestAnimationFrame(this.loop);
+            this.animationId = requestAnimationFrame(this.loop);
         }
 
         init() {
@@ -209,11 +208,16 @@ import StickyNav from "../components/sticky_nav.astro";
             const rows = MAP_404.length;
             const cols = MAP_404[0].length;
             
-            // 计算砖块大小和起始位置以居中
-            const brickWidth = Math.min(40, (this.width - 40) / cols); // 限制最大宽度
+            // 预留列间距后再计算砖块宽度，确保窄屏下点阵不会溢出画布
+            const sidePadding = this.width < 768 ? 16 : 40;
+            const availableWidth = Math.max(1, this.width - sidePadding * 2);
+            const brickWidth = Math.max(
+                1,
+                Math.min(40, (availableWidth - Math.max(0, cols - 1) * CONFIG.brickGap) / cols)
+            );
             const brickHeight = brickWidth * 0.6;
-            const totalWidth = cols * (brickWidth + CONFIG.brickGap) - CONFIG.brickGap;
-            const startX = (this.width - totalWidth) / 2;
+            const totalWidth = cols * brickWidth + Math.max(0, cols - 1) * CONFIG.brickGap;
+            const startX = Math.max(sidePadding, (this.width - totalWidth) / 2);
             const startY = this.height * 0.25; // 垂直位置
 
             for (let r = 0; r < rows; r++) {
