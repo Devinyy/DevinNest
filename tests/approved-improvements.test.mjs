@@ -235,6 +235,19 @@ test("article pages expose loading, slow, error, retry, and not-found states", a
   assert.match(state, /role="alert"/);
 });
 
+test("legacy and static article pages keep the header aligned with the content and toc row", async () => {
+  const legacy = await source("src/pages/blog/detail.astro");
+  const staticPage = await source("src/pages/blog/article/[id].astro");
+
+  for (const page of [legacy, staticPage]) {
+    assert.match(page, /class="article-main max-w-screen-2xl/);
+    assert.match(page, /\.article-layout\s*\{[\s\S]*?width:\s*100%[\s\S]*?min-width:\s*0/);
+    assert.match(page, /\.article-layout\s*>\s*(?:article|aside)[\s\S]*?min-width:\s*0/);
+  }
+  assert.match(staticPage, /<article class="article-shell">/);
+  assert.doesNotMatch(staticPage, /<article class="max-w-4xl mx-auto">/);
+});
+
 test("article retry and lifecycle listeners are registered before the first await", async () => {
   const legacy = await source("src/pages/blog/detail.astro");
   const staticPage = await source("src/pages/blog/article/[id].astro");

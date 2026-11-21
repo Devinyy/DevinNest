@@ -186,7 +186,14 @@ if (!id && !markdownRaw) {
         border: 1px solid rgba(255,255,255,0.08);
         box-shadow: 0 8px 24px rgba(0,0,0,0.15);
       }
-      .article-layout { align-items: start; }
+      .article-main { width: 100%; }
+      .article-layout {
+        width: 100%;
+        min-width: 0;
+        align-items: start;
+      }
+      .article-layout > article,
+      .article-layout > aside { min-width: 0; }
       @media (min-width: 1024px) {
         .article-layout.article-layout-error { align-items: stretch; }
         .article-layout.article-layout-error .article-toc-card {
@@ -200,7 +207,7 @@ if (!id && !markdownRaw) {
     <div class="reading-progress" id="readingProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="阅读进度"></div>
     <StickyNav showImmediately={true} />
 
-    <main class="max-w-screen-2xl mx-auto px-3 xs:px-5 lg:px-10 pt-20 pb-12">
+    <main class="article-main max-w-screen-2xl mx-auto px-3 xs:px-5 lg:px-10 pt-20 pb-12">
       <!-- 顶部信息区 -->
       <section class="card glass-card">
         <div class="card-body">
