@@ -29,6 +29,8 @@
   },
   "devDependencies": {
     "fontmin": "^1.1.0",
-    "terser": "^5.31.1"
+    "sharp": "^0.33.5",
+    "terser": "^5.31.1",
+    "vite": "^5.4.21"
   }
 }
