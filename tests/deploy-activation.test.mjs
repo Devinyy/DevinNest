@@ -12,8 +12,17 @@ const activationScript = new URL("../scripts/activate-release.sh", import.meta.u
 
 test("production workflow is restricted to master and verifies the SSH host fingerprint", async () => {
   const workflow = await readFile(new URL("../.github/workflows/deploy.yml", import.meta.url), "utf8");
+  const workspace = await readFile(new URL("../pnpm-workspace.yaml", import.meta.url), "utf8");
   assert.match(workflow, /branches:\s*\n\s+- master/);
   assert.doesNotMatch(workflow, /- main\b/);
+  assert.match(workflow, /pnpm\/action-setup@v4[\s\S]*version: 11\.1\.2/);
+  assert.match(workflow, /cache: pnpm/);
+  assert.match(workflow, /cache-dependency-path: pnpm-lock\.yaml/);
+  assert.match(workflow, /run: pnpm install --frozen-lockfile/);
+  assert.doesNotMatch(workflow, /cache: npm|run: npm (?:ci|install)/);
+  assert.match(workspace, /esbuild:\s*true/);
+  assert.match(workspace, /sharp:\s*true/);
+  assert.match(workspace, /ttf2woff2:\s*true/);
   assert.match(workflow, /scp-action@v1\.0\.0[\s\S]*fingerprint: \$\{\{ secrets\.SERVER_HOST_FINGERPRINT \}\}/);
   assert.match(workflow, /ssh-action@v1\.2\.3[\s\S]*fingerprint: \$\{\{ secrets\.SERVER_HOST_FINGERPRINT \}\}/);
   assert.match(workflow, /RELEASE_ID: \$\{\{ github\.sha \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
