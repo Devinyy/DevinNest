@@ -46,16 +46,41 @@ else
   fail "curl or wget is required for the post-deploy health check"
 fi
 
+HEALTH_CHECK_ATTEMPTS="${HEALTH_CHECK_ATTEMPTS:-10}"
+HEALTH_CHECK_DELAY_SECONDS="${HEALTH_CHECK_DELAY_SECONDS:-3}"
+case "$HEALTH_CHECK_ATTEMPTS" in
+  ''|*[!0-9]*) fail "HEALTH_CHECK_ATTEMPTS must be a non-negative integer" ;;
+esac
+case "$HEALTH_CHECK_DELAY_SECONDS" in
+  ''|*[!0-9]*) fail "HEALTH_CHECK_DELAY_SECONDS must be a non-negative integer" ;;
+esac
+[ "$HEALTH_CHECK_ATTEMPTS" -gt 0 ] || fail "HEALTH_CHECK_ATTEMPTS must be greater than zero"
+
 verify_service() {
-  docker inspect --format '{{.State.Running}}' homepage | grep -qx true || return 1
-  if [ "$HTTP_CHECKER" = curl ]; then
-    curl --fail --silent --show-error --location --insecure \
-      --resolve devinnest.top:443:127.0.0.1 \
-      --max-time 15 https://devinnest.top/ >/dev/null
-  else
-    wget -q --no-check-certificate --timeout=15 --tries=1 \
-      --header='Host: devinnest.top' -O /dev/null https://127.0.0.1/
-  fi
+  local attempt=1
+
+  while [ "$attempt" -le "$HEALTH_CHECK_ATTEMPTS" ]; do
+    if docker inspect --format '{{.State.Running}}' homepage | grep -qx true; then
+      if [ "$HTTP_CHECKER" = curl ]; then
+        if curl --fail --silent --show-error --location --insecure \
+          --resolve devinnest.top:443:127.0.0.1 \
+          --max-time 15 https://devinnest.top/ >/dev/null; then
+          return 0
+        fi
+      elif wget -q --no-check-certificate --timeout=15 --tries=1 \
+        --header='Host: devinnest.top' -O /dev/null https://127.0.0.1/; then
+        return 0
+      fi
+    fi
+
+    if [ "$attempt" -lt "$HEALTH_CHECK_ATTEMPTS" ]; then
+      echo "Health check attempt $attempt/$HEALTH_CHECK_ATTEMPTS failed; retrying in ${HEALTH_CHECK_DELAY_SECONDS}s." >&2
+      sleep "$HEALTH_CHECK_DELAY_SECONDS"
+    fi
+    attempt=$((attempt + 1))
+  done
+
+  return 1
 }
 
 compose_up() {
@@ -108,6 +133,36 @@ CURRENT_RELEASE=""
 LEGACY_RELEASE=""
 LEGACY_IMAGE_TAG=""
 CURRENT_ROLLBACK_OVERRIDE=""
+VALIDATED_IMAGE_TAG=""
+
+validate_fixed_release() {
+  local release="$1"
+  local image_prefix="${2:-}"
+  local image_tag
+
+  [ -f "$release/docker-compose.yml" ] || fail "release is missing docker-compose.yml: $release"
+  [ -f "$release/rollback-compose.override.yml" ] || fail "release has no fixed-image rollback metadata: $release"
+  image_tag="$(sed -n 's/^    image: //p' "$release/rollback-compose.override.yml")"
+  [ -n "$image_tag" ] || fail "release rollback image tag is missing: $release"
+  if [ -n "$image_prefix" ]; then
+    case "$image_tag" in
+      "$image_prefix"*) ;;
+      *) fail "release rollback image tag has an unexpected prefix: $release" ;;
+    esac
+  fi
+  docker image inspect "$image_tag" >/dev/null 2>&1 || fail "release rollback image is missing: $image_tag"
+  VALIDATED_IMAGE_TAG="$image_tag"
+}
+
+container_uses_image_tag() {
+  local image_tag="$1"
+  local running_image
+  local tagged_image
+
+  running_image="$(docker inspect --format '{{.Image}}' homepage 2>/dev/null || true)"
+  tagged_image="$(docker image inspect --format '{{.Id}}' "$image_tag" 2>/dev/null || true)"
+  [ -n "$running_image" ] && [ -n "$tagged_image" ] && [ "$running_image" = "$tagged_image" ]
+}
 
 if [ -L "$RELEASES_DIR" ] || { [ -e "$RELEASES_DIR" ] && [ ! -d "$RELEASES_DIR" ]; }; then
   fail "releases path is not a normal directory"
@@ -126,10 +181,12 @@ if [ -L "$CURRENT_LINK" ]; then
   [ -f "$CURRENT_RELEASE/docker-compose.yml" ] || fail "current release is incomplete"
   [ -d "$RELEASES_DIR" ] || fail "releases directory is missing"
   CURRENT_ROLLBACK_OVERRIDE="$CURRENT_RELEASE/rollback-compose.override.yml"
-  [ -f "$CURRENT_ROLLBACK_OVERRIDE" ] || fail "current release has no fixed-image rollback metadata"
-  CURRENT_IMAGE_TAG="$(sed -n 's/^    image: //p' "$CURRENT_ROLLBACK_OVERRIDE")"
-  [ -n "$CURRENT_IMAGE_TAG" ] || fail "current rollback image tag is missing"
-  docker image inspect "$CURRENT_IMAGE_TAG" >/dev/null 2>&1 || fail "current rollback image is missing"
+  validate_fixed_release "$CURRENT_RELEASE"
+  CURRENT_IMAGE_TAG="$VALIDATED_IMAGE_TAG"
+  case "$CURRENT_IMAGE_TAG" in
+    devinnest-release:*|devinnest-legacy:*) ;;
+    *) fail "current rollback image tag has an unexpected prefix" ;;
+  esac
 fi
 
 compose_project=""
@@ -149,6 +206,40 @@ if docker container inspect homepage >/dev/null 2>&1; then
 
   [ "$compose_project" = homepage ] || fail "existing homepage container is not managed by Compose project homepage"
   [ "$compose_service" = homepage ] || fail "existing homepage container is not the homepage service"
+fi
+
+# A first migration can be interrupted after its legacy baseline is created
+# but before the current symlink is installed. Reuse exactly one complete
+# legacy baseline, and only if the running homepage container still uses its
+# pinned image. Other releases may be incomplete attempts and are preserved;
+# they are never treated as rollback candidates.
+if [ -z "$CURRENT_RELEASE" ] && [ -d "$RELEASES_DIR" ]; then
+  legacy_candidates=()
+  while IFS= read -r -d '' legacy_candidate; do
+    legacy_candidates+=("$legacy_candidate")
+  done < <(find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d -name 'legacy-*' -print0)
+
+  if [ "${#legacy_candidates[@]}" -gt 1 ]; then
+    fail "multiple legacy migration baselines exist; refusing to guess"
+  fi
+  if [ "${#legacy_candidates[@]}" -eq 1 ]; then
+    LEGACY_RELEASE="${legacy_candidates[0]}"
+    [ -f "$LEGACY_RELEASE/container.inspect.json" ] || fail "legacy migration baseline is incomplete"
+    validate_fixed_release "$LEGACY_RELEASE" "devinnest-legacy:"
+    LEGACY_IMAGE_TAG="$VALIDATED_IMAGE_TAG"
+
+    if docker container inspect homepage >/dev/null 2>&1; then
+      case "$compose_workdir" in
+        "$PROJECT_DIR"|"$LEGACY_RELEASE") ;;
+        *) fail "existing homepage container is not running from the legacy migration baseline" ;;
+      esac
+      container_uses_image_tag "$LEGACY_IMAGE_TAG" || fail "existing homepage container is not using the legacy rollback image"
+      verify_service || fail "existing legacy homepage container failed its health check"
+    fi
+
+    CURRENT_RELEASE="$LEGACY_RELEASE"
+    echo "Resuming the interrupted migration from the verified legacy baseline: $CURRENT_RELEASE"
+  fi
 fi
 
 # The first automated release may adopt the currently running, verified

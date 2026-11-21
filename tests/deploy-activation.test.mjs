@@ -49,13 +49,20 @@ if [ "$1" = container ] && [ "\${2:-}" = inspect ]; then
   [ "\${CONTAINER_EXISTS:-0}" = 1 ]
   exit $?
 fi
-if [ "$1" = image ] && [ "\${2:-}" = inspect ]; then exit 0; fi
+if [ "$1" = image ] && [ "\${2:-}" = inspect ]; then
+  if [ "\${3:-}" = --format ]; then
+    case "\${4:-}" in
+      *'.Id'*) echo "\${IMAGE_ID:-sha256:legacy}" ;;
+    esac
+  fi
+  exit 0
+fi
 if [ "$1" = tag ]; then exit 0; fi
 if [ "$1" = inspect ]; then
   if [ "\${2:-}" != --format ]; then echo '{}'; exit 0; fi
   format="\${3:-}"
   case "$format" in
-    *'.Image'*) echo sha256:legacy ;;
+    *'.Image'*) echo "\${IMAGE_ID:-sha256:legacy}" ;;
     *Config.Image*) echo "\${LEGACY_COMPOSE_IMAGE:-homepage-homepage}" ;;
     *State.Running*) echo true ;;
     *com.docker.compose.project.working_dir*) echo "\${COMPOSE_WORKDIR:-}" ;;
@@ -71,7 +78,13 @@ exit 1
 const curlMock = `#!/bin/sh
 set -eu
 printf 'curl %s\\n' "$*" >> "$MOCK_LOG"
-[ "\${HEALTH_FAIL:-0}" != 1 ]
+attempt_file="$MOCK_STATE/curl-attempts"
+attempt=0
+if [ -f "$attempt_file" ]; then attempt="$(cat "$attempt_file")"; fi
+attempt=$((attempt + 1))
+printf '%s\\n' "$attempt" > "$attempt_file"
+[ "\${HEALTH_FAIL:-0}" != 1 ] || exit 1
+if [ "$attempt" -le "\${HEALTH_TRANSIENT_FAILURES:-0}" ]; then exit 1; fi
 `;
 
 async function exists(path) {
@@ -121,7 +134,9 @@ async function fixture({ containerExists = false } = {}) {
       MOCK_LOG: log,
       MOCK_STATE: state,
       CONTAINER_EXISTS: containerExists ? "1" : "0",
+      IMAGE_ID: "sha256:legacy",
       LEGACY_COMPOSE_IMAGE: "homepage-homepage",
+      HEALTH_CHECK_DELAY_SECONDS: "0",
       PATH: `${fakeBin}:${process.env.PATH}`,
     },
   };
@@ -136,6 +151,21 @@ async function runActivation(fixtureState, overrides = {}) {
   } catch (error) {
     return { ok: false, stdout: error.stdout || "", stderr: error.stderr || "", code: error.code };
   }
+}
+
+async function createInterruptedLegacyBaseline(fixtureState, id = "legacy-run-0") {
+  const legacy = join(fixtureState.projectReal, "releases", id);
+  await mkdir(join(legacy, "dist"), { recursive: true });
+  await writeFile(join(legacy, "dist/index.html"), "legacy\n");
+  await writeFile(join(legacy, "Dockerfile"), "legacy\n");
+  await writeFile(join(legacy, "docker-compose.yml"), "services:\n  homepage:\n    image: homepage-homepage\n");
+  await writeFile(join(legacy, "nginx.conf"), "legacy\n");
+  await writeFile(join(legacy, "container.inspect.json"), "{}\n");
+  await writeFile(
+    join(legacy, "rollback-compose.override.yml"),
+    "services:\n  homepage:\n    image: devinnest-legacy:" + id + "\n",
+  );
+  return legacy;
 }
 
 test("first release adopts a verified homepage container as a rollback baseline", async () => {
@@ -171,6 +201,53 @@ test("a failed first release rolls back to the pinned legacy image without rebui
   assert.equal(await readlink(join(f.project, "current")), join(f.projectReal, "releases/legacy-run-1"));
   assert.match(await readFile(join(f.project, "releases/legacy-run-1/rollback-compose.override.yml"), "utf8"), /devinnest-legacy:run-1/);
   assert.match(await readFile(f.log, "utf8"), /up -d --no-build/);
+});
+
+test("health checks retry transient TLS startup failures", async () => {
+  const f = await fixture({ containerExists: true });
+  for (const file of ["Dockerfile", "docker-compose.yml", "nginx.conf"]) {
+    await writeFile(join(f.project, file), "legacy\n");
+  }
+  await mkdir(join(f.project, "dist"));
+  await writeFile(join(f.project, "dist/index.html"), "legacy\n");
+
+  const result = await runActivation(f, {
+    COMPOSE_WORKDIR: f.projectReal,
+    HEALTH_TRANSIENT_FAILURES: "2",
+  });
+  assert.equal(result.ok, true, result.stderr);
+  const curlAttempts = Number.parseInt(await readFile(join(f.state, "curl-attempts"), "utf8"), 10);
+  assert.ok(curlAttempts >= 3, `expected retries, got ${curlAttempts} curl attempts`);
+});
+
+test("an interrupted first migration resumes one verified legacy baseline", async () => {
+  const f = await fixture({ containerExists: true });
+  const legacy = await createInterruptedLegacyBaseline(f);
+
+  const result = await runActivation(f, {
+    COMPOSE_WORKDIR: legacy,
+    RELEASE_ID: "run-resume",
+    IMAGE_ID: "sha256:legacy",
+    HEALTH_TRANSIENT_FAILURES: "2",
+  });
+  assert.equal(result.ok, true, result.stderr);
+  assert.match(result.stdout, /Resuming the interrupted migration/);
+  assert.equal(await readlink(join(f.project, "current")), join(f.projectReal, "releases/run-resume"));
+  assert.equal(await exists(join(f.project, "releases/legacy-run-0/container.inspect.json")), true);
+});
+
+test("a recovered legacy baseline can remain current for the next release", async () => {
+  const f = await fixture({ containerExists: true });
+  const legacy = await createInterruptedLegacyBaseline(f);
+  await symlink(legacy, join(f.project, "current"));
+
+  const result = await runActivation(f, {
+    COMPOSE_WORKDIR: legacy,
+    RELEASE_ID: "run-after-recovery",
+    IMAGE_ID: "sha256:legacy",
+  });
+  assert.equal(result.ok, true, result.stderr);
+  assert.equal(await readlink(join(f.project, "current")), join(f.projectReal, "releases/run-after-recovery"));
 });
 
 test("a failed update rolls back to the managed current release", async () => {
