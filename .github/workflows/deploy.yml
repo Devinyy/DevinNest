@@ -20,6 +20,8 @@ jobs:
   build:
     name: Build and verify
     runs-on: ubuntu-latest
+    env:
+      BUILD_API_PORT: 18080
 
     steps:
       - name: Checkout
@@ -40,6 +42,89 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Open build API SSH tunnel
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_HOST_FINGERPRINT: ${{ secrets.SERVER_HOST_FINGERPRINT }}
+          BUILD_API_PORT: ${{ env.BUILD_API_PORT }}
+        run: |
+          set -euo pipefail
+
+          test -n "$SERVER_HOST" || { echo "Missing SERVER_HOST" >&2; exit 1; }
+          test -n "$SERVER_USER" || { echo "Missing SERVER_USER" >&2; exit 1; }
+          test -n "$SERVER_SSH_KEY" || { echo "Missing SERVER_SSH_KEY" >&2; exit 1; }
+          case "$SERVER_HOST_FINGERPRINT" in
+            SHA256:*) ;;
+            *) echo "SERVER_HOST_FINGERPRINT must use the SHA256:... format" >&2; exit 1 ;;
+          esac
+          case "$BUILD_API_PORT" in
+            ''|*[!0-9]*) echo "BUILD_API_PORT must be numeric" >&2; exit 1 ;;
+          esac
+
+          tunnel_dir="$RUNNER_TEMP/devinnest-api-tunnel"
+          key_file="$tunnel_dir/id_ed25519"
+          known_hosts="$tunnel_dir/known_hosts"
+          pid_file="$tunnel_dir/ssh.pid"
+          log_file="$tunnel_dir/ssh.log"
+          mkdir -p "$tunnel_dir"
+          chmod 700 "$tunnel_dir"
+
+          # Keep the key in a runner-only temporary file. Do not print it or enable shell tracing.
+          printf '%s\n' "$SERVER_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+
+          # Verify the scanned ECDSA key before trusting it. Only one key is accepted.
+          scan="$(ssh-keyscan -T 10 -t ecdsa "$SERVER_HOST" 2>/dev/null || true)"
+          test -n "$scan" || { echo "Unable to scan the SSH host key" >&2; exit 1; }
+          scan_fingerprints="$(printf '%s\n' "$scan" | ssh-keygen -lf - -E sha256 | awk 'NF { print $2 }')"
+          fingerprint_count="$(printf '%s\n' "$scan_fingerprints" | awk 'NF { count += 1 } END { print count + 0 }')"
+          if [ "$fingerprint_count" -ne 1 ] || [ "$scan_fingerprints" != "$SERVER_HOST_FINGERPRINT" ]; then
+            echo "SERVER_HOST_FINGERPRINT does not match the scanned ECDSA key" >&2
+            exit 1
+          fi
+          printf '%s\n' "$scan" > "$known_hosts"
+          chmod 600 "$known_hosts"
+
+          nohup ssh \
+            -N -T \
+            -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o ExitOnForwardFailure=yes \
+            -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=3 \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$known_hosts" \
+            -o IdentitiesOnly=yes \
+            -i "$key_file" \
+            -L "127.0.0.1:${BUILD_API_PORT}:127.0.0.1:8000" \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            > "$log_file" 2>&1 < /dev/null &
+          printf '%s\n' "$!" > "$pid_file"
+
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --max-time 5 \
+              "http://127.0.0.1:${BUILD_API_PORT}/api/v1/nest/blog/list?pageSize=1" \
+              -o /dev/null; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+              echo "SSH API tunnel exited unexpectedly" >&2
+              sed -n '1,120p' "$log_file" >&2 || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "Timed out waiting for the SSH API tunnel" >&2
+            sed -n '1,120p' "$log_file" >&2 || true
+            exit 1
+          fi
+
       - name: Run regression tests
         run: node --test tests/*.mjs
 
@@ -48,11 +133,36 @@ jobs:
         env:
           ASTRO_SITE: https://devinnest.top
           PUBLIC_API_BASE_URL: https://devinnest-api.top:8443/api
+          BUILD_API_BASE_URL: http://127.0.0.1:18080/api
 
       - name: Validate static article routes
         run: node build/validate-static-articles.js
         env:
           PUBLIC_API_BASE_URL: https://devinnest-api.top:8443/api
+          BUILD_API_BASE_URL: http://127.0.0.1:18080/api
+
+      - name: Close build API SSH tunnel
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          tunnel_dir="$RUNNER_TEMP/devinnest-api-tunnel"
+          pid_file="$tunnel_dir/ssh.pid"
+          if [ -f "$pid_file" ]; then
+            pid="$(cat "$pid_file" 2>/dev/null || true)"
+            case "$pid" in
+              ''|*[!0-9]*) ;;
+              *)
+                kill "$pid" 2>/dev/null || true
+                wait "$pid" 2>/dev/null || true
+                ;;
+            esac
+          fi
+          rm -f \
+            "$tunnel_dir/ssh.pid" \
+            "$tunnel_dir/ssh.log" \
+            "$tunnel_dir/id_ed25519" \
+            "$tunnel_dir/known_hosts"
+          rmdir "$tunnel_dir" 2>/dev/null || true
 
       - name: Create release archive
         run: tar -czf devinnest-release.tar.gz dist Dockerfile docker-compose.yml nginx.conf scripts/activate-release.sh

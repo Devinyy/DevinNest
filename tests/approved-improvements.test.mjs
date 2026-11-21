@@ -109,6 +109,26 @@ test("production builds fail closed when the blog API fails and validate static 
   assert.match(validator, /unexpected=/);
 });
 
+test("production builds use a fingerprint-verified API tunnel without leaking it to browsers", async () => {
+  const workflow = await source(".github/workflows/deploy.yml");
+  const request = await source("src/utils/request.ts");
+  const thumbs = await source("build/gen-remote-thumbs.js");
+  const validator = await source("build/validate-static-articles.js");
+
+  assert.match(workflow, /name: Open build API SSH tunnel/);
+  assert.match(workflow, /ssh-keyscan -T 10 -t ecdsa/);
+  assert.match(workflow, /ssh-keygen -lf - -E sha256/);
+  assert.match(workflow, /-L "127\.0\.0\.1:\$\{BUILD_API_PORT\}:127\.0\.0\.1:8000"/);
+  assert.match(workflow, /BUILD_API_BASE_URL: http:\/\/127\.0\.0\.1:18080\/api/);
+  assert.match(workflow, /name: Close build API SSH tunnel[\s\S]*if: \$\{\{ always\(\) \}\}/);
+  assert.doesNotMatch(workflow, /echo\s+["']?\$SERVER_SSH_KEY/);
+  assert.match(request, /import\.meta\.env\.SSR/);
+  assert.match(request, /import\.meta\.env\.BUILD_API_BASE_URL/);
+  assert.match(thumbs, /process\.env\.BUILD_API_BASE_URL/);
+  assert.match(thumbs, /protocol === "http:"/);
+  assert.match(validator, /process\.env\.BUILD_API_BASE_URL/);
+});
+
 test("production site configuration has a real fallback", async () => {
   const config = await source("astro.config.mjs");
 

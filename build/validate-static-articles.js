@@ -6,9 +6,14 @@ const fail = (message) => {
   process.exitCode = 1;
 };
 
-const apiBase = String(process.env.PUBLIC_API_BASE_URL || "").trim();
+const apiEnvName = process.env.BUILD_API_BASE_URL
+  ? "BUILD_API_BASE_URL"
+  : "PUBLIC_API_BASE_URL";
+const apiBase = String(
+  process.env.BUILD_API_BASE_URL || process.env.PUBLIC_API_BASE_URL || "",
+).trim();
 if (!apiBase) {
-  fail("PUBLIC_API_BASE_URL is required");
+  fail("BUILD_API_BASE_URL or PUBLIC_API_BASE_URL is required");
 } else {
   let apiUrl;
   try {
@@ -17,7 +22,7 @@ if (!apiBase) {
     apiUrl = new URL(`${apiBase.replace(/\/+$/, "")}/v1/nest/blog/list`);
     apiUrl.searchParams.set("pageSize", "1000");
   } catch (error) {
-    fail(`PUBLIC_API_BASE_URL must be an absolute HTTP(S) URL: ${error.message}`);
+    fail(`${apiEnvName} must be an absolute HTTP(S) URL: ${error.message}`);
   }
 
   if (apiUrl) {

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import http from "http";
 import https from "https";
 import crypto from "crypto";
 import sharp from "sharp";
@@ -30,6 +31,7 @@ function readEnvProd(key) {
 }
 
 const API_BASE =
+  process.env.BUILD_API_BASE_URL ||
   process.env.PUBLIC_API_BASE_URL ||
   readEnvProd("PUBLIC_API_BASE_URL") ||
   "https://devinnest-api.top:8443/api";
@@ -37,7 +39,24 @@ const API_BASE =
 // 下载到 Buffer（容忍过期证书 rejectUnauthorized:false，仅构建机本地使用）
 function fetchBuffer(url, timeout = TIMEOUT) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { rejectUnauthorized: false }, (res) => {
+    let transport;
+    let options = {};
+    try {
+      const protocol = new URL(url).protocol;
+      if (protocol === "http:") {
+        transport = http;
+      } else if (protocol === "https:") {
+        transport = https;
+        options = { rejectUnauthorized: false };
+      } else {
+        throw new Error(`Unsupported URL protocol: ${protocol}`);
+      }
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    const req = transport.get(url, options, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
         fetchBuffer(res.headers.location, timeout).then(resolve, reject);

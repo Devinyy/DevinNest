@@ -17,8 +17,11 @@ interface CustomConfig {
   hideErrorMsg?: boolean; // 是否隐藏自动错误提示
 }
 
-// 环境变量获取 API Base URL
-const baseURL = import.meta.env.PUBLIC_API_BASE_URL || '/api';
+// 构建期/服务端请求可以通过 CI 建立的本地 SSH 隧道访问后端；
+// 浏览器请求必须始终使用公开 API 地址，避免把 runner 的 localhost 带进客户端。
+const baseURL = import.meta.env.SSR
+  ? (import.meta.env.BUILD_API_BASE_URL || import.meta.env.PUBLIC_API_BASE_URL || '/api')
+  : (import.meta.env.PUBLIC_API_BASE_URL || '/api');
 
 /**
  * 统一错误处理函数
